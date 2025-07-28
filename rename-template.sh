@@ -51,7 +51,7 @@ rename_directories() {
 # Replace all text references
 replace_in_files "$OLD_APP_NAME_FRONTEND" "$NEW_APP_NAME_FRONTEND" "package.json, Dockerfile, CI files"
 replace_in_files "$OLD_APP_NAME_BACKEND" "$NEW_APP_NAME_BACKEND" "Go files, CI files"
-replace_in_files "$OLD_APP_NAME" "$NEW_APP_NAME" "Chart.yaml, values.yaml, README files"
+replace_in_files "$OLD_APP_NAME" "$NEW_APP_NAME" "Chart.yaml, values.yaml, README files, config.js"
 
 # Replace GitHub repository references
 replace_in_files "github.com/frallan97/$OLD_APP_NAME_BACKEND" "github.com/frallan97/$NEW_APP_NAME_BACKEND" "Go files"

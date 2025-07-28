@@ -67,7 +67,7 @@ rename_directories() {
 # Replace app name references
 replace_in_files "$OLD_APP_NAME_FRONTEND" "$NEW_APP_NAME_FRONTEND" "frontend package names"
 replace_in_files "$OLD_APP_NAME_BACKEND" "$NEW_APP_NAME_BACKEND" "backend module names"
-replace_in_files "$OLD_APP_NAME" "$NEW_APP_NAME" "general app references"
+replace_in_files "$OLD_APP_NAME" "$NEW_APP_NAME" "general app references, config.js"
 
 # Replace GitHub username references
 replace_in_files "github.com/$OLD_GITHUB_USERNAME/$OLD_APP_NAME_BACKEND" "github.com/$GITHUB_USERNAME/$NEW_APP_NAME_BACKEND" "Go module paths"
