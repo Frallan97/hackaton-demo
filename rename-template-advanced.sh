@@ -74,9 +74,11 @@ replace_in_files "github.com/$OLD_GITHUB_USERNAME/$OLD_APP_NAME_BACKEND" "github
 replace_in_files "ghcr.io/$OLD_GITHUB_USERNAME/$OLD_APP_NAME_FRONTEND" "ghcr.io/$GITHUB_USERNAME/$NEW_APP_NAME_FRONTEND" "frontend Docker images"
 replace_in_files "ghcr.io/$OLD_GITHUB_USERNAME/$OLD_APP_NAME_BACKEND" "ghcr.io/$GITHUB_USERNAME/$NEW_APP_NAME_BACKEND" "backend Docker images"
 
-# Replace domain references
-replace_in_files "$OLD_APP_NAME.web.$OLD_DOMAIN" "$NEW_APP_NAME.web.$DOMAIN" "domain references"
-# Note: We don't replace general domain references as it could break other URLs
+# Replace domain references (only exact matches to prevent duplication)
+echo "Replacing domain references..."
+find . -name "*.yaml" -o -name "*.yml" -o -name "*.md" | \
+  grep -v ".git" | \
+  xargs sed -i "s|$OLD_APP_NAME\.web\.$OLD_DOMAIN|$NEW_APP_NAME.web.$DOMAIN|g"
 
 # Replace JWT issuer
 replace_in_files "Issuer:    \"$OLD_APP_NAME\"" "Issuer:    \"$NEW_APP_NAME\"" "JWT issuer"

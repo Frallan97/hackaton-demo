@@ -17,10 +17,10 @@ ingress:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
   tls:
     - hosts:
-        - hackaton-demo.web.hackaton-demo.web.hackaton-demo.web.hackaton-demo.web.franssjostrom.com
+        - hackaton-demo.web.franssjostrom.com
       secretName: web-wildcard-tls
   hosts:
-    - host: hackaton-demo.web.hackaton-demo.web.hackaton-demo.web.hackaton-demo.web.franssjostrom.com
+    - host: hackaton-demo.web.franssjostrom.com
       paths:
         - path: /
           pathType: Prefix

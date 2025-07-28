@@ -42,7 +42,7 @@ The scripts automatically update **all** references across the entire codebase:
 ### Kubernetes/Helm
 - Chart name: `hackaton-demo` → `inventory-app`
 - Image references: `ghcr.io/frallan97/hackaton-demo-frontend` → `ghcr.io/myusername/inventory-app-frontend`
-- Domain configuration: `hackaton-demo.web.hackaton-demo.web.franssjostrom.com` → `inventory-app.web.mydomain.com`
+- Domain configuration: `hackaton-demo.web.franssjostrom.com` → `inventory-app.web.mydomain.com`
 
 ### CI/CD Pipeline
 - GitHub Container Registry image names

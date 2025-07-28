@@ -36,7 +36,7 @@ backend:
   repository: ghcr.io/frallan97/hackaton-demo-backend
 ingress:
   hosts:
-    - host: hackaton-demo.web.hackaton-demo.web.franssjostrom.com
+          - host: hackaton-demo.web.franssjostrom.com
 EOF
 
 # Copy the rename script

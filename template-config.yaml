@@ -18,7 +18,7 @@ template:
   domain:
     base: "hackaton-demo.web.franssjostrom.com"
     subdomain: "hackaton-demo"
-    full_domain: "hackaton-demo.web.hackaton-demo.web.franssjostrom.com"
+    full_domain: "hackaton-demo.web.franssjostrom.com"
     
   # JWT configuration
   jwt:
