@@ -30,7 +30,7 @@ func NewRoleController(dbManager *database.DBManager) *RoleController {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Router /api/roles [get,post,put,delete]
+// @Router /api/roles [get]
 func (rc *RoleController) RolesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

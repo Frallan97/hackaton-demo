@@ -1,4 +1,4 @@
-// @title        React-Go-App API
+// @title        Hackaton Demo API
 // @version      0.1.0
 // @description  Auto‑generated Swagger docs
 // @host         localhost:8080

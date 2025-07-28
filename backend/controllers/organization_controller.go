@@ -30,7 +30,7 @@ func NewOrganizationController(dbManager *database.DBManager) *OrganizationContr
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Router /api/organizations [get,post,put,delete]
+// @Router /api/organizations [get]
 func (oc *OrganizationController) OrganizationsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
