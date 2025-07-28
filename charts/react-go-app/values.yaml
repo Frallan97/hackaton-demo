@@ -1,0 +1,63 @@
+replicaCount: 1
+frontend:
+  image:
+    repository: ghcr.io/frallan97/react-go-app-frontend
+    tag: "1.48.0"
+  service:
+    port: 80
+backend:
+  image:
+    repository: ghcr.io/frallan97/react-go-app-backend
+    tag: "1.48.0"
+  service:
+    port: 8080
+ingress:
+  enabled: true
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+  tls:
+    - hosts:
+        - react-go-app.web.franssjostrom.com
+      secretName: web-wildcard-tls
+  hosts:
+    - host: react-go-app.web.franssjostrom.com
+      paths:
+        - path: /
+          pathType: Prefix
+        - path: /api
+          pathType: Prefix
+# Image pull secrets for GHCR
+imagePullSecrets:
+  - name: ghcr-secret
+# -------------------------------------------------------------------
+# OAuth Configuration
+oauth:
+  googleClientId: "446906390811-o6mpdm0v9ekf6lfa1kja0vkdqbghb81g.apps.googleusercontent.com"
+  googleClientSecret: "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"
+  jwtSecretKey: "your-secret-key-change-in-production"
+  # Redirect URL will be automatically set to production domain in Kubernetes
+  # For local development, it uses the .env file value
+# -------------------------------------------------------------------
+# In‑cluster Postgres settings
+db:
+  enabled: true
+  user: appuser
+  password: apppass
+  name: appdb
+  # The image to use for Postgres
+  image:
+    repository: bitnami/postgresql
+    tag: 15
+  # Size of your persistent volume
+  pvcSize: 1Gi
+# -------------------------------------------------------------------
+# In‑cluster Redis settings
+redis:
+  enabled: true
+  password: redispass
+  # The image to use for Redis
+  image:
+    repository: redis
+    tag: 7-alpine
+  # Size of your persistent volume
+  pvcSize: 1Gi

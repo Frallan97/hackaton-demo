@@ -1,0 +1,13 @@
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+.vscode/
+.idea/
+.DS_Store
+
+# Binary executables
+react-go-app-backend
