@@ -82,8 +82,13 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Switch to main branch and pull latest changes
+          git checkout main
+          git pull origin main
+          # Add and commit the chart changes
           git add charts/hackaton-demo/values.yaml charts/hackaton-demo/Chart.yaml
           git commit -m "ci: bump chart to ${{ steps.tag.outputs.TAG }} [skip ci]"
+          # Push to main branch
           git push origin main
 
       # 9) (Optional) Notify or output
