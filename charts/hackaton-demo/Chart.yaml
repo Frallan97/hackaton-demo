@@ -1,5 +1,5 @@
 apiVersion: v2
-name: react-go-app
+name: hackaton-demo
 description: React frontend + Go backend
 version: 0.1.0
 appVersion: "1.48.0"

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/frallan97/react-go-app-backend/services"
+	"github.com/frallan97/hackaton-demo-backend/services"
 )
 
 // RBACMiddleware provides role-based access control

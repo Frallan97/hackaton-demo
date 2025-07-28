@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/frallan97/react-go-app-backend/models"
+	"github.com/frallan97/hackaton-demo-backend/models"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -41,7 +41,7 @@ func (j *JWTService) GenerateTokens(user *models.User) (string, string, error) {
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.accessExpiry)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
-			Issuer:    "react-go-app",
+			Issuer:    "hackaton-demo",
 			Subject:   user.Email,
 		},
 	}
@@ -60,7 +60,7 @@ func (j *JWTService) GenerateTokens(user *models.User) (string, string, error) {
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.refreshExpiry)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
-			Issuer:    "react-go-app",
+			Issuer:    "hackaton-demo",
 			Subject:   user.Email,
 		},
 	}
@@ -109,7 +109,7 @@ func (j *JWTService) RefreshToken(refreshTokenString string) (string, error) {
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.accessExpiry)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
-			Issuer:    "react-go-app",
+			Issuer:    "hackaton-demo",
 			Subject:   claims.Email,
 		},
 	}

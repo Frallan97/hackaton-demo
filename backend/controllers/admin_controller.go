@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/frallan97/react-go-app-backend/database"
-	"github.com/frallan97/react-go-app-backend/middleware"
-	"github.com/frallan97/react-go-app-backend/models"
-	"github.com/frallan97/react-go-app-backend/services"
+	"github.com/frallan97/hackaton-demo-backend/database"
+	"github.com/frallan97/hackaton-demo-backend/middleware"
+	"github.com/frallan97/hackaton-demo-backend/models"
+	"github.com/frallan97/hackaton-demo-backend/services"
 )
 
 // AdminController handles admin-related HTTP requests

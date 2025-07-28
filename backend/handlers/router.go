@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/frallan97/react-go-app-backend/controllers"
-	"github.com/frallan97/react-go-app-backend/database"
-	"github.com/frallan97/react-go-app-backend/middleware"
-	"github.com/frallan97/react-go-app-backend/services"
+	"github.com/frallan97/hackaton-demo-backend/controllers"
+	"github.com/frallan97/hackaton-demo-backend/database"
+	"github.com/frallan97/hackaton-demo-backend/middleware"
+	"github.com/frallan97/hackaton-demo-backend/services"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 

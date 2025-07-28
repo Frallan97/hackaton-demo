@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/frallan97/react-go-app-backend/models"
+	"github.com/frallan97/hackaton-demo-backend/models"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	googleoauth2 "google.golang.org/api/oauth2/v2"

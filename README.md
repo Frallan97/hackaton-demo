@@ -5,7 +5,7 @@ A full-stack micro-app with React frontend, Go backend, and PostgreSQL database.
 ## Structure
 
 ```
-react-go-app/
+hackaton-demo/
 ├── frontend/          # React app (Vite)
 ├── backend/           # Go API server (modular architecture)
 │   ├── controllers/   # HTTP request handlers
@@ -146,14 +146,14 @@ docker-compose down
 - **JWT errors**: Verify `JWT_SECRET_KEY` is set in `.env`
 - **Kubernetes nginx proxy errors**: The frontend uses environment variable `BACKEND_URL` to connect to backend service
   - Docker Compose: `http://backend:8080`
-  - Kubernetes: `http://react-go-app-backend:8080` (or your release name)
+  - Kubernetes: `http://hackaton-demo-backend:8080` (or your release name)
 
 ## Deployment
 
 ### Kubernetes (via Argo CD)
 ```bash
 # Deploy to cluster
-helm install react-go-app charts/react-go-app/
+helm install hackaton-demo charts/hackaton-demo/
 
 # Or via Argo CD Application
 # (configured to auto-sync from Git)

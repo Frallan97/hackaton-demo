@@ -1,0 +1,55 @@
+# Template Configuration
+# This file defines the variables that will be replaced when using this template
+
+template:
+  # Base application name (will be used to generate frontend/backend names)
+  base_name: "hackaton-demo"
+  
+  # Generated names (these will be auto-generated as base_name-frontend/backend)
+  frontend_name: "hackaton-demo-frontend"
+  backend_name: "hackaton-demo-backend"
+  
+  # GitHub configuration
+  github:
+    username: "frallan97"
+    container_registry: "ghcr.io"
+    
+  # Domain configuration
+  domain:
+    base: "hackaton-demo.web.franssjostrom.com"
+    subdomain: "hackaton-demo"
+    full_domain: "hackaton-demo.web.hackaton-demo.web.franssjostrom.com"
+    
+  # JWT configuration
+  jwt:
+    issuer: "hackaton-demo"
+    
+  # Docker configuration
+  docker:
+    frontend_image: "ghcr.io/frallan97/hackaton-demo-frontend"
+    backend_image: "ghcr.io/frallan97/hackaton-demo-backend"
+    
+  # Helm chart configuration
+  helm:
+    chart_name: "hackaton-demo"
+    chart_path: "charts/hackaton-demo"
+    
+  # CI/CD configuration
+  ci:
+    workflow_file: ".github/workflows/ci.yaml"
+    dockerfile_frontend: "frontend/Dockerfile"
+    dockerfile_backend: "backend/Dockerfile"
+
+# Files that contain references to be replaced:
+files_to_update:
+  - "backend/go.mod"
+  - "backend/main.go"
+  - "backend/**/*.go"
+  - "frontend/package.json"
+  - "frontend/Dockerfile"
+  - "charts/*/Chart.yaml"
+  - "charts/*/values.yaml"
+  - ".github/workflows/*.yaml"
+  - "docker-compose.yml"
+  - "README.md"
+  - "**/*.md" 

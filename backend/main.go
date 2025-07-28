@@ -10,11 +10,11 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/frallan97/react-go-app-backend/config"
-	"github.com/frallan97/react-go-app-backend/database"
-	_ "github.com/frallan97/react-go-app-backend/docs"
-	"github.com/frallan97/react-go-app-backend/handlers"
-	"github.com/frallan97/react-go-app-backend/services"
+	"github.com/frallan97/hackaton-demo-backend/config"
+	"github.com/frallan97/hackaton-demo-backend/database"
+	_ "github.com/frallan97/hackaton-demo-backend/docs"
+	"github.com/frallan97/hackaton-demo-backend/handlers"
+	"github.com/frallan97/hackaton-demo-backend/services"
 )
 
 func main() {

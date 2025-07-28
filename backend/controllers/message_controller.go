@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/frallan97/react-go-app-backend/database"
-	"github.com/frallan97/react-go-app-backend/models"
+	"github.com/frallan97/hackaton-demo-backend/database"
+	"github.com/frallan97/hackaton-demo-backend/models"
 )
 
 // MessageController handles message-related endpoints

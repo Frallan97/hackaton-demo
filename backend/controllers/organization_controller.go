@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/frallan97/react-go-app-backend/database"
-	"github.com/frallan97/react-go-app-backend/models"
-	"github.com/frallan97/react-go-app-backend/services"
+	"github.com/frallan97/hackaton-demo-backend/database"
+	"github.com/frallan97/hackaton-demo-backend/models"
+	"github.com/frallan97/hackaton-demo-backend/services"
 )
 
 // OrganizationController handles organization-related HTTP requests

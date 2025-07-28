@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/frallan97/react-go-app-backend/models"
+	"github.com/frallan97/hackaton-demo-backend/models"
 )
 
 // UserService handles user-related database operations

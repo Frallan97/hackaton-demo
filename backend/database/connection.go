@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/frallan97/react-go-app-backend/config"
+	"github.com/frallan97/hackaton-demo-backend/config"
 	_ "github.com/lib/pq"
 )
 

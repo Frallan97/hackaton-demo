@@ -1,13 +1,13 @@
 replicaCount: 1
 frontend:
   image:
-    repository: ghcr.io/frallan97/react-go-app-frontend
+    repository: ghcr.io/frallan97/hackaton-demo-frontend
     tag: "1.48.0"
   service:
     port: 80
 backend:
   image:
-    repository: ghcr.io/frallan97/react-go-app-backend
+    repository: ghcr.io/frallan97/hackaton-demo-backend
     tag: "1.48.0"
   service:
     port: 8080
@@ -17,10 +17,10 @@ ingress:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
   tls:
     - hosts:
-        - react-go-app.web.franssjostrom.com
+        - hackaton-demo.web.hackaton-demo.web.hackaton-demo.web.hackaton-demo.web.franssjostrom.com
       secretName: web-wildcard-tls
   hosts:
-    - host: react-go-app.web.franssjostrom.com
+    - host: hackaton-demo.web.hackaton-demo.web.hackaton-demo.web.hackaton-demo.web.franssjostrom.com
       paths:
         - path: /
           pathType: Prefix

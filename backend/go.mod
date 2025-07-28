@@ -1,4 +1,4 @@
-module github.com/frallan97/react-go-app-backend
+module github.com/frallan97/hackaton-demo-backend
 
 go 1.23.0
 
