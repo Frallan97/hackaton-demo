@@ -22,7 +22,14 @@ func NewDBManager(cfg *config.Config) *DBManager {
 	db, err := sql.Open("postgres", cfg.GetDSN())
 	if err != nil {
 		log.Printf("failed to open DB: %v", err)
+		return nil
 	}
+
+	// Configure connection pool settings
+	db.SetMaxOpenConns(25)                 // Maximum number of open connections
+	db.SetMaxIdleConns(5)                  // Maximum number of idle connections
+	db.SetConnMaxLifetime(5 * time.Minute) // Maximum lifetime of a connection
+	db.SetConnMaxIdleTime(1 * time.Minute) // Maximum idle time of a connection
 
 	manager := &DBManager{
 		DB:     db,
@@ -50,11 +57,13 @@ func (dm *DBManager) monitorConnection() {
 					log.Printf("lost connection to DB: %v", err)
 					dm.Connected.Store(false)
 				} else {
+					// Only log connection failures if we're not already connected
+					// This reduces noise during startup
 					log.Printf("unable to ping DB: %v", err)
 				}
 			}
 		}
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second) // Increased interval to reduce logging
 	}
 }
 

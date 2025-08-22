@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/frallan97/hackaton-demo-backend/config"
 	"github.com/frallan97/hackaton-demo-backend/database"
@@ -30,7 +31,51 @@ func main() {
 
 	// Initialize database manager
 	dbManager := database.NewDBManager(cfg)
+	if dbManager == nil {
+		log.Fatal("Failed to create database manager")
+	}
 	defer dbManager.Close()
+
+	// Wait for database connection to be established
+	log.Println("Waiting for database connection...")
+	for i := 0; i < 30; i++ { // Wait up to 30 seconds
+		if dbManager.IsConnected() {
+			log.Println("Database connection established successfully")
+			break
+		}
+		if i == 29 {
+			log.Fatal("Failed to establish database connection after 30 seconds")
+		}
+		log.Println("Waiting for database connection...")
+		time.Sleep(1 * time.Second)
+	}
+
+	// Test database connection stability
+	log.Println("Testing database connection stability...")
+	for i := 0; i < 3; i++ {
+		if err := dbManager.DB.Ping(); err != nil {
+			log.Fatalf("Database connection test failed: %v", err)
+		}
+		time.Sleep(1 * time.Second)
+	}
+	log.Println("Database connection is stable")
+
+	// Initialize migration service and run migrations
+	migrationService := services.NewMigrationService(dbManager.DB)
+	log.Println("Running database migrations...")
+	if err := migrationService.RunMigrations(); err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
+
+	// Small delay to ensure database connection is stable after migrations
+	log.Println("Waiting for database connection to stabilize after migrations...")
+	time.Sleep(2 * time.Second)
+
+	// Final connection test after migrations
+	if err := dbManager.DB.Ping(); err != nil {
+		log.Fatalf("Database connection lost after migrations: %v", err)
+	}
+	log.Println("Database connection confirmed stable after migrations")
 
 	// Initialize services
 	userService := services.NewUserService(dbManager.DB)

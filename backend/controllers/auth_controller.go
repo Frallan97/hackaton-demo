@@ -71,7 +71,9 @@ func (ac *AuthController) GoogleLoginHandler() http.HandlerFunc {
 		// Check if user exists in our database
 		user, err := ac.userService.GetUserByGoogleID(googleUserInfo.ID)
 		if err != nil {
-			http.Error(w, "database error", 500)
+			// Log the actual error for debugging
+			fmt.Printf("Database error getting user by Google ID: %v\n", err)
+			http.Error(w, fmt.Sprintf("database error: %v", err), 500)
 			return
 		}
 
@@ -86,7 +88,9 @@ func (ac *AuthController) GoogleLoginHandler() http.HandlerFunc {
 
 			user, err = ac.userService.CreateUser(userData)
 			if err != nil {
-				http.Error(w, "failed to create user", 500)
+				// Log the actual error for debugging
+				fmt.Printf("Failed to create user: %v\n", err)
+				http.Error(w, fmt.Sprintf("failed to create user: %v", err), 500)
 				return
 			}
 		} else {
