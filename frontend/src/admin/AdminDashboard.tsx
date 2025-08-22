@@ -57,18 +57,51 @@ const AdminDashboard: React.FC = () => {
         authenticatedFetch(`${config.apiBaseUrl}/api/organizations`)
       ]);
 
-      if (usersRes.ok && rolesRes.ok && orgsRes.ok) {
-        const [usersData, rolesData, orgsData] = await Promise.all([
-          usersRes.json(),
-          rolesRes.json(),
-          orgsRes.json()
-        ]);
+      // Handle each response individually to provide better error handling
+      let usersData: User[] = [];
+      let rolesData: Role[] = [];
+      let organizationsData: Organization[] = [];
 
-        setUsers(usersData);
-        setRoles(rolesData);
-        setOrganizations(orgsData);
+      if (usersRes.ok) {
+        try {
+          usersData = await usersRes.json() || [];
+        } catch (e) {
+          console.warn('Failed to parse users data:', e);
+          usersData = [];
+        }
       } else {
-        throw new Error('Failed to load data');
+        console.warn('Failed to load users:', usersRes.status, usersRes.statusText);
+      }
+
+      if (rolesRes.ok) {
+        try {
+          rolesData = await rolesRes.json() || [];
+        } catch (e) {
+          console.warn('Failed to parse roles data:', e);
+          rolesData = [];
+        }
+      } else {
+        console.warn('Failed to load roles:', rolesRes.status, rolesRes.statusText);
+      }
+
+      if (orgsRes.ok) {
+        try {
+          organizationsData = await orgsRes.json() || [];
+        } catch (e) {
+          console.warn('Failed to parse organizations data:', e);
+          organizationsData = [];
+        }
+      } else {
+        console.warn('Failed to load organizations:', orgsRes.status, orgsRes.statusText);
+      }
+
+      setUsers(usersData);
+      setRoles(rolesData);
+      setOrganizations(organizationsData);
+
+      // Only show error if all requests failed
+      if (!usersRes.ok && !rolesRes.ok && !orgsRes.ok) {
+        setError('Failed to load all admin data. Please check your connection and try again.');
       }
     } catch (err) {
       setError('Failed to load admin data: ' + (err as Error).message);
@@ -161,15 +194,15 @@ const AdminDashboard: React.FC = () => {
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
-              Users ({users.length})
+              Users ({users?.length || 0})
             </TabsTrigger>
             <TabsTrigger value="roles" className="flex items-center gap-2">
               <Shield className="w-4 h-4" />
-              Roles ({roles.length})
+              Roles ({roles?.length || 0})
             </TabsTrigger>
             <TabsTrigger value="organizations" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
-              Organizations ({organizations.length})
+              Organizations ({organizations?.length || 0})
             </TabsTrigger>
           </TabsList>
 
@@ -182,7 +215,7 @@ const AdminDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4">
-                  {users.map((user) => (
+                  {users && users.length > 0 ? users.map((user) => (
                     <Card key={user.id} className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -204,7 +237,7 @@ const AdminDashboard: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          {roles.map((role) => {
+                          {roles && roles.length > 0 ? roles.map((role) => {
                             const hasRole = user.roles?.some(r => r.id === role.id);
                             return (
                               <Button
@@ -220,11 +253,18 @@ const AdminDashboard: React.FC = () => {
                                 {role.name}
                               </Button>
                             );
-                          })}
+                          }) : (
+                            <p className="text-sm text-gray-500">No roles available</p>
+                          )}
                         </div>
                       </div>
                     </Card>
-                  ))}
+                  )) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                      <p>No users found</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -239,7 +279,7 @@ const AdminDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4">
-                  {roles.map((role) => (
+                  {roles && roles.length > 0 ? roles.map((role) => (
                     <Card key={role.id} className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
@@ -251,7 +291,12 @@ const AdminDashboard: React.FC = () => {
                         <Badge variant="outline">{role.name}</Badge>
                       </div>
                     </Card>
-                  ))}
+                  )) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Shield className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                      <p>No roles found</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -266,7 +311,7 @@ const AdminDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4">
-                  {organizations.map((org) => (
+                  {organizations && organizations.length > 0 ? organizations.map((org) => (
                     <Card key={org.id} className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
@@ -278,7 +323,12 @@ const AdminDashboard: React.FC = () => {
                         <Badge variant="outline">{org.name}</Badge>
                       </div>
                     </Card>
-                  ))}
+                  )) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                      <p>No organizations found</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
