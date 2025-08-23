@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 
 	"github.com/frallan97/hackaton-demo-backend/controllers"
 	"github.com/frallan97/hackaton-demo-backend/database"
+	"github.com/frallan97/hackaton-demo-backend/events"
 	"github.com/frallan97/hackaton-demo-backend/middleware"
 	"github.com/frallan97/hackaton-demo-backend/services"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -22,10 +24,11 @@ type Router struct {
 	adminController        *controllers.AdminController
 	setupController        *controllers.SetupController
 	rbacMiddleware         *middleware.RBACMiddleware
+	eventService           *events.EventService
 }
 
 // NewRouter creates a new router with all controllers
-func NewRouter(dbManager *database.DBManager, userService *services.UserService, jwtService *services.JWTService, googleOAuthService *services.GoogleOAuthService) *Router {
+func NewRouter(dbManager *database.DBManager, userService *services.UserService, jwtService *services.JWTService, googleOAuthService *services.GoogleOAuthService, eventService *events.EventService) *Router {
 	// Create rate limiter for login endpoint: 5 requests per minute
 	loginRateLimiter := middleware.NewRateLimiter(5, time.Minute)
 	adminService := services.NewAdminService(dbManager.DB)
@@ -35,12 +38,13 @@ func NewRouter(dbManager *database.DBManager, userService *services.UserService,
 		loginRateLimiter:       loginRateLimiter,
 		healthController:       controllers.NewHealthController(dbManager),
 		messageController:      controllers.NewMessageController(dbManager),
-		authController:         controllers.NewAuthController(dbManager, userService, jwtService, googleOAuthService),
+		authController:         controllers.NewAuthController(dbManager, userService, jwtService, googleOAuthService, eventService),
 		roleController:         controllers.NewRoleController(dbManager),
 		organizationController: controllers.NewOrganizationController(dbManager),
 		adminController:        controllers.NewAdminController(dbManager),
 		setupController:        controllers.NewSetupController(dbManager),
 		rbacMiddleware:         rbacMiddleware,
+		eventService:           eventService,
 	}
 }
 
@@ -50,6 +54,9 @@ func (r *Router) SetupRoutes() http.Handler {
 
 	// Health check endpoint
 	mux.HandleFunc("/health", r.healthController.HealthHandler())
+
+	// Event monitoring endpoint (admin only)
+	mux.Handle("/api/events/stats", r.rbacMiddleware.RequireRole("admin")(http.HandlerFunc(r.getEventStats)))
 
 	// API endpoints
 	mux.HandleFunc("/api/messages", r.messageController.MessagesHandler())
@@ -86,4 +93,18 @@ func (r *Router) SetupRoutes() http.Handler {
 	handler = middleware.CORSMiddleware(handler)
 
 	return handler
+}
+
+// getEventStats returns event bus statistics
+func (r *Router) getEventStats(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
+		http.Error(w, "method not allowed", 405)
+		return
+	}
+
+	stats := r.eventService.GetEventStats()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
 }

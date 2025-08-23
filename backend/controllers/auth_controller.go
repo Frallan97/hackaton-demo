@@ -7,8 +7,10 @@ import (
 	"strings"
 
 	"github.com/frallan97/hackaton-demo-backend/database"
+	"github.com/frallan97/hackaton-demo-backend/events"
 	"github.com/frallan97/hackaton-demo-backend/models"
 	"github.com/frallan97/hackaton-demo-backend/services"
+	"github.com/frallan97/hackaton-demo-backend/utils"
 )
 
 // AuthController handles authentication-related endpoints
@@ -17,15 +19,17 @@ type AuthController struct {
 	userService        *services.UserService
 	jwtService         *services.JWTService
 	googleOAuthService *services.GoogleOAuthService
+	eventService       *events.EventService
 }
 
 // NewAuthController creates a new auth controller
-func NewAuthController(dbManager *database.DBManager, userService *services.UserService, jwtService *services.JWTService, googleOAuthService *services.GoogleOAuthService) *AuthController {
+func NewAuthController(dbManager *database.DBManager, userService *services.UserService, jwtService *services.JWTService, googleOAuthService *services.GoogleOAuthService, eventService *events.EventService) *AuthController {
 	return &AuthController{
 		dbManager:          dbManager,
 		userService:        userService,
 		jwtService:         jwtService,
 		googleOAuthService: googleOAuthService,
+		eventService:       eventService,
 	}
 }
 
@@ -36,35 +40,43 @@ func NewAuthController(dbManager *database.DBManager, userService *services.User
 // @Accept      json
 // @Produce     json
 // @Param       login  body   models.LoginRequest  true  "Google OAuth code"
-// @Success     200   {object}  models.AuthResponse
-// @Failure     400   {object}  map[string]string
-// @Failure     500   {object}  map[string]string
+// @Success     200   {object}  utils.APIResponse{data=models.AuthResponse}
+// @Failure     400   {object}  utils.APIResponse
+// @Failure     405   {object}  utils.APIResponse
+// @Failure     500   {object}  utils.APIResponse
 // @Router      /api/auth/google/login [post]
 func (ac *AuthController) GoogleLoginHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			w.Header().Set("Allow", "POST")
-			http.Error(w, "method not allowed", 405)
+			utils.WriteMethodNotAllowed(w, "POST")
 			return
 		}
 
 		var req models.LoginRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "invalid request body", 400)
+			utils.WriteBadRequest(w, "Invalid request body", err)
+			return
+		}
+
+		// Validate input
+		if req.Code == "" {
+			utils.WriteValidationError(w, map[string]string{
+				"code": "Authorization code is required",
+			})
 			return
 		}
 
 		// Exchange authorization code for access token
 		token, err := ac.googleOAuthService.ExchangeCodeForToken(req.Code)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to exchange code: %v", err), 400)
+			utils.WriteBadRequest(w, "Failed to exchange authorization code", err)
 			return
 		}
 
 		// Get user info from Google
 		googleUserInfo, err := ac.googleOAuthService.GetUserInfo(token)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to get user info: %v", err), 400)
+			utils.WriteBadRequest(w, "Failed to get user info from Google", err)
 			return
 		}
 
@@ -73,7 +85,7 @@ func (ac *AuthController) GoogleLoginHandler() http.HandlerFunc {
 		if err != nil {
 			// Log the actual error for debugging
 			fmt.Printf("Database error getting user by Google ID: %v\n", err)
-			http.Error(w, fmt.Sprintf("database error: %v", err), 500)
+			utils.WriteInternalServerError(w, "Database error while retrieving user", err)
 			return
 		}
 
@@ -90,8 +102,15 @@ func (ac *AuthController) GoogleLoginHandler() http.HandlerFunc {
 			if err != nil {
 				// Log the actual error for debugging
 				fmt.Printf("Failed to create user: %v\n", err)
-				http.Error(w, fmt.Sprintf("failed to create user: %v", err), 500)
+				utils.WriteInternalServerError(w, "Failed to create user account", err)
 				return
+			}
+
+			// Publish user created event
+			if ac.eventService != nil {
+				if err := ac.eventService.PublishUserCreated(user.ID, user.Email, user.Name); err != nil {
+					fmt.Printf("Warning: Failed to publish user created event: %v\n", err)
+				}
 			}
 		} else {
 			// Update last login time
@@ -111,10 +130,17 @@ func (ac *AuthController) GoogleLoginHandler() http.HandlerFunc {
 			}
 		}
 
+		// Publish user login event
+		if ac.eventService != nil {
+			if err := ac.eventService.PublishUserLogin(user.ID, user.Email, user.Name); err != nil {
+				fmt.Printf("Warning: Failed to publish user login event: %v\n", err)
+			}
+		}
+
 		// Generate JWT tokens
 		accessToken, refreshToken, err := ac.jwtService.GenerateTokens(user)
 		if err != nil {
-			http.Error(w, "failed to generate tokens", 500)
+			utils.WriteInternalServerError(w, "Failed to generate authentication tokens", err)
 			return
 		}
 
@@ -127,8 +153,7 @@ func (ac *AuthController) GoogleLoginHandler() http.HandlerFunc {
 			ExpiresIn:    int(ac.jwtService.GetTokenExpiry().Seconds()),
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		utils.WriteOK(w, response, "Login successful")
 	}
 }
 
@@ -137,13 +162,12 @@ func (ac *AuthController) GoogleLoginHandler() http.HandlerFunc {
 // @Description Get the Google OAuth authorization URL
 // @Tags        auth
 // @Produce     json
-// @Success     200   {object}  map[string]string
+// @Success     200   {object}  utils.APIResponse{data=map[string]string}
 // @Router      /api/auth/google/url [get]
 func (ac *AuthController) GetAuthURLHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
-			w.Header().Set("Allow", "GET")
-			http.Error(w, "method not allowed", 405)
+			utils.WriteMethodNotAllowed(w, "GET")
 			return
 		}
 
@@ -155,9 +179,15 @@ func (ac *AuthController) GetAuthURLHandler() http.HandlerFunc {
 			"state":    state,
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		utils.WriteOK(w, response, "Google OAuth URL generated successfully")
 	}
+}
+
+// RefreshTokenResponse represents the response for token refresh
+type RefreshTokenResponse struct {
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
+	ExpiresIn   string `json:"expires_in"`
 }
 
 // RefreshTokenHandler refreshes an access token using a refresh token
@@ -167,38 +197,45 @@ func (ac *AuthController) GetAuthURLHandler() http.HandlerFunc {
 // @Accept      json
 // @Produce     json
 // @Param       refresh  body   models.RefreshTokenRequest  true  "Refresh token"
-// @Success     200   {object}  map[string]string
-// @Failure     400   {object}  map[string]string
+// @Success     200   {object}  utils.APIResponse{data=RefreshTokenResponse}
+// @Failure     400   {object}  utils.APIResponse
+// @Failure     405   {object}  utils.APIResponse
 // @Router      /api/auth/refresh [post]
 func (ac *AuthController) RefreshTokenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			w.Header().Set("Allow", "POST")
-			http.Error(w, "method not allowed", 405)
+			utils.WriteMethodNotAllowed(w, "POST")
 			return
 		}
 
 		var req models.RefreshTokenRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "invalid request body", 400)
+			utils.WriteBadRequest(w, "Invalid request body", err)
+			return
+		}
+
+		// Validate input
+		if req.RefreshToken == "" {
+			utils.WriteValidationError(w, map[string]string{
+				"refresh_token": "Refresh token is required",
+			})
 			return
 		}
 
 		// Refresh the access token
 		newAccessToken, err := ac.jwtService.RefreshToken(req.RefreshToken)
 		if err != nil {
-			http.Error(w, "invalid refresh token", 400)
+			utils.WriteBadRequest(w, "Invalid refresh token", err)
 			return
 		}
 
-		response := map[string]string{
-			"access_token": newAccessToken,
-			"token_type":   "Bearer",
-			"expires_in":   fmt.Sprintf("%d", int(ac.jwtService.GetTokenExpiry().Seconds())),
+		response := &RefreshTokenResponse{
+			AccessToken: newAccessToken,
+			TokenType:   "Bearer",
+			ExpiresIn:   fmt.Sprintf("%d", int(ac.jwtService.GetTokenExpiry().Seconds())),
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		utils.WriteOK(w, response, "Token refreshed successfully")
 	}
 }
 
@@ -208,52 +245,58 @@ func (ac *AuthController) RefreshTokenHandler() http.HandlerFunc {
 // @Tags        auth
 // @Produce     json
 // @Security    BearerAuth
-// @Success     200   {object}  models.User
-// @Failure     401   {object}  map[string]string
+// @Success     200   {object}  utils.APIResponse{data=models.User}
+// @Failure     401   {object}  utils.APIResponse
+// @Failure     404   {object}  utils.APIResponse
+// @Failure     405   {object}  utils.APIResponse
+// @Failure     500   {object}  utils.APIResponse
 // @Router      /api/auth/me [get]
 func (ac *AuthController) GetMeHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
-			w.Header().Set("Allow", "GET")
-			http.Error(w, "method not allowed", 405)
+			utils.WriteMethodNotAllowed(w, "GET")
 			return
 		}
 
 		// Extract token from Authorization header
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			http.Error(w, "authorization header required", 401)
+			utils.WriteUnauthorized(w, "Authorization header required")
 			return
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 		if tokenString == authHeader {
-			http.Error(w, "invalid authorization header format", 401)
+			utils.WriteUnauthorized(w, "Invalid authorization header format")
 			return
 		}
 
 		// Validate token
 		claims, err := ac.jwtService.ValidateToken(tokenString)
 		if err != nil {
-			http.Error(w, "invalid token", 401)
+			utils.WriteUnauthorized(w, "Invalid token")
 			return
 		}
 
 		// Get user from database
 		user, err := ac.userService.GetUserByID(claims.UserID)
 		if err != nil {
-			http.Error(w, "database error", 500)
+			utils.WriteInternalServerError(w, "Database error while retrieving user", err)
 			return
 		}
 
 		if user == nil {
-			http.Error(w, "user not found", 404)
+			utils.WriteNotFound(w, "User not found")
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(user)
+		utils.WriteOK(w, user, "User information retrieved successfully")
 	}
+}
+
+// LogoutResponse represents the response for logout
+type LogoutResponse struct {
+	Message string `json:"message"`
 }
 
 // LogoutHandler handles user logout
@@ -261,25 +304,53 @@ func (ac *AuthController) GetMeHandler() http.HandlerFunc {
 // @Description Logout user (client should discard tokens)
 // @Tags        auth
 // @Produce     json
-// @Success     200   {object}  map[string]string
+// @Security    BearerAuth
+// @Success     200   {object}  utils.APIResponse{data=LogoutResponse}
+// @Failure     405   {object}  utils.APIResponse
 // @Router      /api/auth/logout [post]
 func (ac *AuthController) LogoutHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			w.Header().Set("Allow", "POST")
-			http.Error(w, "method not allowed", 405)
+			utils.WriteMethodNotAllowed(w, "POST")
 			return
+		}
+
+		// Extract token from Authorization header to get user info for event publishing
+		authHeader := r.Header.Get("Authorization")
+		var userID int
+		var userEmail string
+		var userName string
+
+		if authHeader != "" {
+			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+			if tokenString != authHeader {
+				// Validate token to get user info
+				if claims, err := ac.jwtService.ValidateToken(tokenString); err == nil {
+					userID = claims.UserID
+					// Get user details for event
+					if user, err := ac.userService.GetUserByID(userID); err == nil && user != nil {
+						userEmail = user.Email
+						userName = user.Name
+					}
+				}
+			}
+		}
+
+		// Publish logout event if we have user info
+		if ac.eventService != nil && userID > 0 {
+			if err := ac.eventService.PublishUserLogout(userID, userEmail, userName); err != nil {
+				fmt.Printf("Warning: Failed to publish user logout event: %v\n", err)
+			}
 		}
 
 		// In a stateless JWT system, logout is handled client-side
 		// The server can't invalidate JWT tokens, so we just return success
 		// For enhanced security, you could implement a token blacklist using Redis
 
-		response := map[string]string{
-			"message": "Logged out successfully",
+		response := &LogoutResponse{
+			Message: "Logged out successfully",
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		utils.WriteOK(w, response, "Logout successful")
 	}
 }

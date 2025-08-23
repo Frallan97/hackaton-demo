@@ -6,6 +6,7 @@ import (
 
 	"github.com/frallan97/hackaton-demo-backend/database"
 	"github.com/frallan97/hackaton-demo-backend/models"
+	"github.com/frallan97/hackaton-demo-backend/utils"
 )
 
 // MessageController handles message-related endpoints
@@ -20,12 +21,19 @@ func NewMessageController(dbManager *database.DBManager) *MessageController {
 	}
 }
 
+// CreateMessageResponse represents the response for creating a message
+type CreateMessageResponse struct {
+	ID int `json:"id"`
+}
+
 // MessagesHandler lists or creates messages
 // @Summary     List messages
 // @Description Get all messages
 // @Tags        messages
 // @Produce     json
-// @Success     200  {array}   models.Message
+// @Success     200  {object}  utils.APIResponse{data=[]models.Message}
+// @Failure     503  {object}  utils.APIResponse
+// @Failure     500  {object}  utils.APIResponse
 // @Router      /api/messages [get]
 //
 // @Summary     Create message
@@ -34,12 +42,14 @@ func NewMessageController(dbManager *database.DBManager) *MessageController {
 // @Accept      json
 // @Produce     json
 // @Param       msg  body   models.MessageInput  true  "message payload"
-// @Success     201   {object}  map[string]int
+// @Success     201   {object}  utils.APIResponse{data=CreateMessageResponse}
+// @Failure     400   {object}  utils.APIResponse
+// @Failure     500   {object}  utils.APIResponse
 // @Router      /api/messages [post]
 func (mc *MessageController) MessagesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !mc.dbManager.IsConnected() {
-			http.Error(w, `{"status":"db unavailable"}`, http.StatusServiceUnavailable)
+			utils.WriteError(w, http.StatusServiceUnavailable, "Database connection unavailable", nil)
 			return
 		}
 
@@ -49,8 +59,7 @@ func (mc *MessageController) MessagesHandler() http.HandlerFunc {
 		case http.MethodPost:
 			mc.handleCreateMessage(w, r)
 		default:
-			w.Header().Set("Allow", "GET, POST")
-			http.Error(w, "method not allowed", 405)
+			utils.WriteMethodNotAllowed(w, "GET, POST")
 		}
 	}
 }
@@ -59,7 +68,7 @@ func (mc *MessageController) MessagesHandler() http.HandlerFunc {
 func (mc *MessageController) handleGetMessages(w http.ResponseWriter, r *http.Request) {
 	rows, err := mc.dbManager.DB.Query(`SELECT id, content, created_at FROM messages ORDER BY id`)
 	if err != nil {
-		http.Error(w, "db query failed", 500)
+		utils.WriteInternalServerError(w, "Failed to query messages", err)
 		return
 	}
 	defer rows.Close()
@@ -68,20 +77,28 @@ func (mc *MessageController) handleGetMessages(w http.ResponseWriter, r *http.Re
 	for rows.Next() {
 		var m models.Message
 		if err := rows.Scan(&m.ID, &m.Content, &m.CreatedAt); err != nil {
-			http.Error(w, "scan failed", 500)
+			utils.WriteInternalServerError(w, "Failed to scan message data", err)
 			return
 		}
 		msgs = append(msgs, m)
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(msgs)
+
+	utils.WriteOK(w, msgs, "Messages retrieved successfully")
 }
 
 // handleCreateMessage handles POST requests to create a new message
 func (mc *MessageController) handleCreateMessage(w http.ResponseWriter, r *http.Request) {
 	var in models.MessageInput
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		http.Error(w, "invalid payload", 400)
+		utils.WriteBadRequest(w, "Invalid request payload", err)
+		return
+	}
+
+	// Validate input
+	if in.Content == "" {
+		utils.WriteValidationError(w, map[string]string{
+			"content": "Message content is required",
+		})
 		return
 	}
 
@@ -90,11 +107,10 @@ func (mc *MessageController) handleCreateMessage(w http.ResponseWriter, r *http.
 		`INSERT INTO messages(content) VALUES($1) RETURNING id`, in.Content,
 	).Scan(&id)
 	if err != nil {
-		http.Error(w, "insert failed", 500)
+		utils.WriteInternalServerError(w, "Failed to create message", err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]int{"id": id})
+	response := &CreateMessageResponse{ID: id}
+	utils.WriteCreated(w, response, "Message created successfully")
 }

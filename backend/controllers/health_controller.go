@@ -2,8 +2,10 @@ package controllers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/frallan97/hackaton-demo-backend/database"
+	"github.com/frallan97/hackaton-demo-backend/utils"
 )
 
 // HealthController handles health-related endpoints
@@ -18,24 +20,44 @@ func NewHealthController(dbManager *database.DBManager) *HealthController {
 	}
 }
 
-// HealthHandler responds with {"status":"ok"}
+// HealthResponse represents the health check response data
+type HealthResponse struct {
+	Status    string    `json:"status"`
+	Database  string    `json:"database"`
+	Timestamp time.Time `json:"timestamp"`
+	Uptime    string    `json:"uptime,omitempty"`
+}
+
+// HealthHandler responds with standardized health status
 // @Summary     Health check
 // @Description Returns 200 if DB is reachable
 // @Tags        health
 // @Produce     json
-// @Success     200  {object}  map[string]string
+// @Success     200  {object}  utils.APIResponse{data=HealthResponse}
+// @Failure     503  {object}  utils.APIResponse
+// @Failure     500  {object}  utils.APIResponse
 // @Router      /health [get]
 func (hc *HealthController) HealthHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Check database connection
 		if !hc.dbManager.IsConnected() {
-			http.Error(w, `{"status":"db unavailable"}`, http.StatusServiceUnavailable)
+			utils.WriteError(w, http.StatusServiceUnavailable, "Database connection unavailable", nil)
 			return
 		}
+
+		// Test database ping
 		if err := hc.dbManager.DB.Ping(); err != nil {
-			http.Error(w, `{"status":"error"}`, http.StatusInternalServerError)
+			utils.WriteInternalServerError(w, "Database ping failed", err)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"status":"ok"}`))
+
+		// Create health response
+		healthData := &HealthResponse{
+			Status:    "healthy",
+			Database:  "connected",
+			Timestamp: time.Now(),
+		}
+
+		utils.WriteOK(w, healthData, "Service is healthy")
 	}
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/frallan97/hackaton-demo-backend/config"
 	"github.com/frallan97/hackaton-demo-backend/database"
 	_ "github.com/frallan97/hackaton-demo-backend/docs"
+	"github.com/frallan97/hackaton-demo-backend/events"
 	"github.com/frallan97/hackaton-demo-backend/handlers"
 	"github.com/frallan97/hackaton-demo-backend/services"
 )
@@ -77,6 +78,29 @@ func main() {
 	}
 	log.Println("Database connection confirmed stable after migrations")
 
+	// Initialize NATS event bus and services
+	var eventBus events.EventBus
+	var err error
+
+	// Get NATS URL from environment, fallback to localhost for development
+	natsURL := os.Getenv("NATS_URL")
+	if natsURL == "" {
+		natsURL = "nats://localhost:4222"
+	}
+
+	eventBus, err = events.NewNATSEventBus(natsURL)
+	if err != nil {
+		log.Printf("Warning: Failed to connect to NATS at %s, falling back to custom event bus: %v", natsURL, err)
+		eventBus = events.NewEventBus()
+	}
+	_ = events.NewEventHandlerManager(eventBus) // Initialize handlers
+	eventService := events.NewEventService(eventBus)
+
+	// Publish system startup event
+	if err := eventService.PublishSystemStartup(); err != nil {
+		log.Printf("Warning: Failed to publish system startup event: %v", err)
+	}
+
 	// Initialize services
 	userService := services.NewUserService(dbManager.DB)
 	jwtService := services.NewJWTService(cfg.JWTSecretKey)
@@ -87,7 +111,7 @@ func main() {
 	)
 
 	// Initialize router with all controllers and services
-	router := handlers.NewRouter(dbManager, userService, jwtService, googleOAuthService)
+	router := handlers.NewRouter(dbManager, userService, jwtService, googleOAuthService, eventService)
 	handler := router.SetupRoutes()
 
 	log.Printf("listening on :%s", cfg.ServerPort)
