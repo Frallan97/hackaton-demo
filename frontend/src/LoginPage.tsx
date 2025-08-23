@@ -1,24 +1,75 @@
 import React from 'react';
-import { useAuth } from './AuthContext';
+import { useAppDispatch, useAppSelector, useGoogleOAuth } from './store/hooks';
+import { useGetGoogleAuthUrlQuery, useGoogleLoginMutation } from './store/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Chrome } from 'lucide-react';
+import { ThemeToggle } from './components/ThemeToggle';
 
 const LoginPage: React.FC = () => {
-  const { handleGoogleLogin, loading, error } = useAuth();
+  const dispatch = useAppDispatch();
+  const { handleGoogleLoginSuccess } = useGoogleOAuth();
+  
+  // RTK Query hooks
+  const { data: authUrlData, isLoading: isLoadingUrl, error: urlError } = useGetGoogleAuthUrlQuery();
+  const [googleLogin, { isLoading: isLoggingIn, error: loginError }] = useGoogleLoginMutation();
+  
+  // Check for OAuth callback code in URL
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    
+    if (code) {
+      handleOAuthCallback(code);
+    }
+  }, []);
+
+  const handleGoogleLogin = async () => {
+    if (authUrlData?.auth_url) {
+      // Redirect to Google OAuth
+      window.location.href = authUrlData.auth_url;
+    }
+  };
+
+  const handleOAuthCallback = async (code: string) => {
+    try {
+      const result = await googleLogin({ code }).unwrap();
+      
+      // Handle successful login
+      handleGoogleLoginSuccess(result);
+      
+      // Clear the URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Redirect to home page or dashboard
+      window.location.href = '/';
+    } catch (error: any) {
+      console.error('Login failed:', error);
+      // Error will be handled by RTK Query
+    }
+  };
+
+  // Determine loading state and error
+  const isLoading = isLoadingUrl || isLoggingIn;
+  const error = urlError || loginError;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md shadow-xl">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+      {/* Theme toggle in top right */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+      
+      <Card className="w-full max-w-md shadow-xl dark:bg-gray-800 dark:border-gray-700">
         <CardHeader className="text-center space-y-2">
           <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mb-4">
             <Chrome className="w-8 h-8 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">
+          <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
             Hackaton Demo
           </CardTitle>
-          <CardDescription className="text-gray-600">
+          <CardDescription className="text-gray-600 dark:text-gray-400">
             Welcome to the React + Go micro-app with Google OAuth!
           </CardDescription>
         </CardHeader>
@@ -26,19 +77,21 @@ const LoginPage: React.FC = () => {
         <CardContent className="space-y-6">
           {error && (
             <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>
+                {error?.data?.message || error?.message || 'An error occurred during login'}
+              </AlertDescription>
             </Alert>
           )}
           
           <Button 
             onClick={handleGoogleLogin}
-            disabled={loading}
+            disabled={isLoading || !authUrlData?.auth_url}
             className="w-full h-12 text-base font-medium bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
           >
-            {loading ? (
+            {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Signing in...
+                {isLoggingIn ? 'Signing in...' : 'Loading...'}
               </>
             ) : (
               <>
@@ -53,7 +106,7 @@ const LoginPage: React.FC = () => {
             )}
           </Button>
           
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
             Click the button above to sign in with your Google account
           </p>
         </CardContent>

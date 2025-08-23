@@ -437,3 +437,70 @@ go run main.go
 
 For questions or issues, check the troubleshooting section above or create an issue in the repository.
 
+## 🎨 Frontend Features
+
+The React frontend includes:
+- **Google OAuth Integration**: Complete OAuth 2.0 flow with Google
+- **User Profile Display**: Shows user information from Google
+- **Token Management**: Automatic token refresh and logout
+- **Responsive Design**: Clean, modern UI with Google branding
+- **Error Handling**: Comprehensive error messages and loading states
+- **Dark Mode Support**: Automatic theme switching with system preference detection
+- **Theme Persistence**: Remembers user's theme choice across sessions
+- **Redux Toolkit State Management**: Centralized state management across all pages
+- **RTK Query API Handling**: Automatic caching, loading states, and error handling
+
+## 🏗️ Frontend Architecture
+
+### **State Management with Redux Toolkit**
+- **Centralized Store**: Single source of truth for all application state
+- **Slice-based Architecture**: Organized state management with auth, theme, and UI slices
+- **TypeScript Support**: Full type safety throughout the Redux store
+- **DevTools Integration**: Redux DevTools for debugging and state inspection
+
+### **API Management with RTK Query**
+- **Automatic Caching**: Intelligent caching with automatic background updates
+- **Loading States**: Built-in loading and error state management
+- **Optimistic Updates**: Immediate UI updates with automatic rollback on errors
+- **Request Deduplication**: Prevents duplicate API calls
+- **Automatic Re-fetching**: Smart re-fetching on focus and reconnection
+
+### **Store Structure**
+```
+store/
+├── index.ts          # Main store configuration
+├── api.ts            # RTK Query API endpoints
+├── hooks.ts          # Typed Redux hooks
+└── slices/
+    ├── authSlice.ts  # Authentication state
+    ├── themeSlice.ts # Dark/light mode state
+    └── uiSlice.ts    # UI notifications and loading states
+```
+
+### **Usage Examples**
+
+#### **State Selection**
+```tsx
+// Select state from Redux store
+const theme = useAppSelector((state) => state.theme.theme);
+const user = useAppSelector((state) => state.auth.user);
+```
+
+#### **API Calls**
+```tsx
+// RTK Query hooks for API operations
+const { data: users, isLoading, error } = useGetUsersQuery();
+const [createUser, { isLoading: isCreating }] = useCreateUserMutation();
+
+// Mutations with automatic cache invalidation
+await createUser(userData).unwrap();
+```
+
+#### **Dispatching Actions**
+```tsx
+// Dispatch actions to update state
+const dispatch = useAppDispatch();
+dispatch(showSuccess('Operation completed!'));
+dispatch(toggleTheme());
+```
+

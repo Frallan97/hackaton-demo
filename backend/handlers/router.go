@@ -88,9 +88,9 @@ func (r *Router) SetupRoutes() http.Handler {
 	// Swagger documentation
 	mux.Handle("/docs/", httpSwagger.WrapHandler)
 
-	// Apply middleware
-	handler := middleware.LoggingMiddleware(mux)
-	handler = middleware.CORSMiddleware(handler)
+	// Apply middleware - CORS must be first to handle preflight requests
+	handler := middleware.CORSMiddleware(mux)
+	handler = middleware.LoggingMiddleware(handler)
 
 	return handler
 }

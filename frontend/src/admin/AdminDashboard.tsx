@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, ArrowLeft, Users, Shield, Building2, Plus, Minus } from 'lucide-react';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 interface User {
   id: number;
@@ -149,11 +150,11 @@ const AdminDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-            <p>Loading admin dashboard...</p>
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-gray-600 dark:text-gray-400" />
+            <p className="text-gray-600 dark:text-gray-400">Loading admin dashboard...</p>
           </div>
         </div>
       </div>
@@ -161,7 +162,7 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -173,13 +174,16 @@ const AdminDashboard: React.FC = () => {
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-600">Manage users, roles, and organizations</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
+              <p className="text-gray-600 dark:text-gray-400">Manage users, roles, and organizations</p>
             </div>
           </div>
-          <Button onClick={handleLogout} variant="outline">
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <Button onClick={handleLogout} variant="outline">
+              Sign Out
+            </Button>
+          </div>
         </div>
 
         {/* Error Display */}
