@@ -1,11 +1,11 @@
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
-import { store } from './app/store';
-import { AuthProvider, useAuth, LoginPage, ProtectedRoute } from './features/auth';
-import { HomePage } from './features/dashboard';
-import { AdminDashboard } from './features/admin';
-import './index.css';
+import { store } from './store';
+import { AuthProvider, useAuth, LoginPage, ProtectedRoute } from '../features/auth';
+import { HomePage } from '../features/dashboard';
+import { AdminDashboard } from '../features/admin';
+import '../index.css';
 
 function App() {
   const { isLoggedIn, loading } = useAuth();
