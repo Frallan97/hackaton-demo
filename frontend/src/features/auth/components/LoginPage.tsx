@@ -1,5 +1,4 @@
 import React from 'react';
-import { useAppDispatch, useAppSelector } from '../../../shared/hooks/redux';
 import { useGoogleOAuth } from '../hooks/useGoogleOAuth';
 import { useGetGoogleAuthUrlQuery, useGoogleLoginMutation } from '../store/authApi';
 import { Button } from '../../../shared/components/ui/button';
@@ -9,7 +8,6 @@ import { Loader2, Chrome } from 'lucide-react';
 import { ThemeToggle } from '../../../shared/components/ThemeToggle';
 
 const LoginPage: React.FC = () => {
-  const dispatch = useAppDispatch();
   const { handleGoogleLoginSuccess } = useGoogleOAuth();
   
   // RTK Query hooks

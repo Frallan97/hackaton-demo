@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/components/AuthContext';
-import { useAppSelector, useAppDispatch } from '../../../shared/hooks/redux';
+import { useAppDispatch } from '../../../shared/hooks/redux';
 import { showSuccess, showError } from '../../../shared/store/uiSlice';
 import { useSetupFirstAdminMutation } from '../../admin/store/adminApi';
-import config from '../../../shared/config';
 import { Button } from '../../../shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../shared/components/ui/card';
 import { Badge } from '../../../shared/components/ui/badge';
@@ -15,13 +14,13 @@ import { ThemeToggle } from '../../../shared/components/ThemeToggle';
 import { ReduxDemo } from '../../../shared/components/ReduxDemo';
 
 const HomePage: React.FC = () => {
-  const { user, handleLogout, refreshToken, hasRole, authenticatedFetch, setError } = useAuth();
+  const { user, handleLogout, refreshToken, hasRole } = useAuth();
   const dispatch = useAppDispatch();
   const [setupFirstAdmin, { isLoading: setupLoading }] = useSetupFirstAdminMutation();
 
   const handleSetupAdmin = async (): Promise<void> => {
     try {
-      const result = await setupFirstAdmin().unwrap();
+      await setupFirstAdmin().unwrap();
       dispatch(showSuccess('Admin setup successful! Please refresh your token or login again to see admin features.'));
     } catch (err: any) {
       if (err.status === 409) {
