@@ -111,7 +111,7 @@ func main() {
 	)
 
 	// Initialize router with all controllers and services
-	router := handlers.NewRouter(dbManager, userService, jwtService, googleOAuthService, eventService)
+	router := handlers.NewRouter(dbManager, userService, jwtService, googleOAuthService, eventService, cfg)
 	handler := router.SetupRoutes()
 
 	log.Printf("listening on :%s", cfg.ServerPort)

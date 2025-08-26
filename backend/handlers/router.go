@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/frallan97/hackaton-demo-backend/config"
 	"github.com/frallan97/hackaton-demo-backend/controllers"
 	"github.com/frallan97/hackaton-demo-backend/database"
 	"github.com/frallan97/hackaton-demo-backend/events"
@@ -23,16 +24,21 @@ type Router struct {
 	organizationController *controllers.OrganizationController
 	adminController        *controllers.AdminController
 	setupController        *controllers.SetupController
+	stripeController       *controllers.StripeController
 	rbacMiddleware         *middleware.RBACMiddleware
 	eventService           *events.EventService
 }
 
 // NewRouter creates a new router with all controllers
-func NewRouter(dbManager *database.DBManager, userService *services.UserService, jwtService *services.JWTService, googleOAuthService *services.GoogleOAuthService, eventService *events.EventService) *Router {
+func NewRouter(dbManager *database.DBManager, userService *services.UserService, jwtService *services.JWTService, googleOAuthService *services.GoogleOAuthService, eventService *events.EventService, config *config.Config) *Router {
 	// Create rate limiter for login endpoint: 5 requests per minute
 	loginRateLimiter := middleware.NewRateLimiter(5, time.Minute)
 	adminService := services.NewAdminService(dbManager.DB)
 	rbacMiddleware := middleware.NewRBACMiddleware(jwtService, adminService)
+
+	// Initialize Stripe services
+	stripeService := services.NewStripeService(dbManager.DB, config)
+	subscriptionService := services.NewSubscriptionService(dbManager.DB, stripeService)
 
 	return &Router{
 		loginRateLimiter:       loginRateLimiter,
@@ -43,6 +49,7 @@ func NewRouter(dbManager *database.DBManager, userService *services.UserService,
 		organizationController: controllers.NewOrganizationController(dbManager),
 		adminController:        controllers.NewAdminController(dbManager),
 		setupController:        controllers.NewSetupController(dbManager),
+		stripeController:       controllers.NewStripeController(stripeService, subscriptionService, config),
 		rbacMiddleware:         rbacMiddleware,
 		eventService:           eventService,
 	}
@@ -84,6 +91,21 @@ func (r *Router) SetupRoutes() http.Handler {
 	mux.Handle("/api/admin/remove-organization", r.rbacMiddleware.RequireRole("admin")(http.HandlerFunc(r.adminController.RemoveOrganizationHandler())))
 	mux.Handle("/api/admin/user-roles", r.rbacMiddleware.RequireRole("admin")(http.HandlerFunc(r.adminController.GetUserRolesHandler())))
 	mux.Handle("/api/admin/user-organizations", r.rbacMiddleware.RequireRole("admin")(http.HandlerFunc(r.adminController.GetUserOrganizationsHandler())))
+
+	// Stripe endpoints - public endpoints
+	mux.HandleFunc("/api/stripe/webhook", r.stripeController.WebhookHandler())
+	mux.HandleFunc("/api/stripe/plans", r.stripeController.GetAvailablePlansHandler())
+
+	// Stripe endpoints - require authentication
+	mux.Handle("/api/stripe/checkout", r.rbacMiddleware.RequireAnyRole([]string{"user", "admin", "manager"})(http.HandlerFunc(r.stripeController.CreateCheckoutSessionHandler())))
+	mux.Handle("/api/stripe/subscription", r.rbacMiddleware.RequireAnyRole([]string{"user", "admin", "manager"})(http.HandlerFunc(r.stripeController.GetUserSubscriptionHandler())))
+	mux.Handle("/api/stripe/subscription/history", r.rbacMiddleware.RequireAnyRole([]string{"user", "admin", "manager"})(http.HandlerFunc(r.stripeController.GetUserSubscriptionHistoryHandler())))
+	mux.Handle("/api/stripe/payments", r.rbacMiddleware.RequireAnyRole([]string{"user", "admin", "manager"})(http.HandlerFunc(r.stripeController.GetUserPaymentHistoryHandler())))
+	mux.Handle("/api/stripe/subscription/cancel", r.rbacMiddleware.RequireAnyRole([]string{"user", "admin", "manager"})(http.HandlerFunc(r.stripeController.CancelSubscriptionHandler())))
+	mux.Handle("/api/stripe/subscription/reactivate", r.rbacMiddleware.RequireAnyRole([]string{"user", "admin", "manager"})(http.HandlerFunc(r.stripeController.ReactivateSubscriptionHandler())))
+
+	// Stripe admin endpoints - require admin role
+	mux.Handle("/api/stripe/admin/metrics", r.rbacMiddleware.RequireRole("admin")(http.HandlerFunc(r.stripeController.GetSubscriptionMetricsHandler())))
 
 	// Swagger documentation
 	mux.Handle("/docs/", httpSwagger.WrapHandler)
