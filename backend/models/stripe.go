@@ -1,18 +1,19 @@
 package models
 
 import (
+	"database/sql"
 	"time"
 )
 
 // StripeCustomer represents a Stripe customer linked to a user
 type StripeCustomer struct {
-	ID            int       `json:"id" db:"id"`
-	UserID        int       `json:"user_id" db:"user_id"`
-	StripeID      string    `json:"stripe_id" db:"stripe_id"`
-	Email         string    `json:"email" db:"email"`
-	DefaultSource string    `json:"default_source" db:"default_source"`
-	CreatedAt     time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at" db:"updated_at"`
+	ID            int            `json:"id" db:"id"`
+	UserID        int            `json:"user_id" db:"user_id"`
+	StripeID      string         `json:"stripe_id" db:"stripe_id"`
+	Email         string         `json:"email" db:"email"`
+	DefaultSource sql.NullString `json:"default_source" db:"default_source"`
+	CreatedAt     time.Time      `json:"created_at" db:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at" db:"updated_at"`
 }
 
 // StripeCustomerCreate represents the data needed to create a new Stripe customer
@@ -71,14 +72,13 @@ type PaymentCreate struct {
 	Description      string `json:"description"`
 }
 
-// SubscriptionPlan represents a subscription plan
-type SubscriptionPlan struct {
+// PaymentPlan represents a one-time payment plan
+type PaymentPlan struct {
 	ID          string   `json:"id"`
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
 	Price       int64    `json:"price"`
 	Currency    string   `json:"currency"`
-	Interval    string   `json:"interval"`
 	Features    []string `json:"features"`
 }
 
@@ -93,6 +93,13 @@ type CreateCheckoutSessionRequest struct {
 type CreateCheckoutSessionResponse struct {
 	SessionID string `json:"session_id"`
 	URL       string `json:"url"`
+}
+
+// PaymentMetrics represents payment analytics data
+type PaymentMetrics struct {
+	TotalPayments     int            `json:"total_payments"`
+	TotalRevenueCents int            `json:"total_revenue_cents"`
+	PlanDistribution  map[string]int `json:"plan_distribution"`
 }
 
 // WebhookEvent represents a Stripe webhook event

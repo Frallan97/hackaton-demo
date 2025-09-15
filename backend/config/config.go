@@ -17,6 +17,7 @@ type Config struct {
 	DBName     string
 	DBURL      string
 	ServerPort string
+	Environment string
 
 	// JWT Configuration
 	JWTSecretKey string
@@ -59,6 +60,7 @@ func LoadConfig() *Config {
 		DBName:     getEnv("DB_NAME", "postgres"),
 		DBURL:      getEnv("DB_URL", ""),
 		ServerPort: getEnv("SERVER_PORT", "8080"),
+		Environment: getEnv("ENVIRONMENT", "production"),
 
 		// JWT Configuration
 		JWTSecretKey: getEnv("JWT_SECRET_KEY", "your-secret-key-change-in-production"),

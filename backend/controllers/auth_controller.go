@@ -20,16 +20,20 @@ type AuthController struct {
 	jwtService         *services.JWTService
 	googleOAuthService *services.GoogleOAuthService
 	eventService       *events.EventService
+	roleService        *services.RoleService
+	adminService       *services.AdminService
 }
 
 // NewAuthController creates a new auth controller
-func NewAuthController(dbManager *database.DBManager, userService *services.UserService, jwtService *services.JWTService, googleOAuthService *services.GoogleOAuthService, eventService *events.EventService) *AuthController {
+func NewAuthController(dbManager *database.DBManager, userService *services.UserService, jwtService *services.JWTService, googleOAuthService *services.GoogleOAuthService, eventService *events.EventService, roleService *services.RoleService, adminService *services.AdminService) *AuthController {
 	return &AuthController{
 		dbManager:          dbManager,
 		userService:        userService,
 		jwtService:         jwtService,
 		googleOAuthService: googleOAuthService,
 		eventService:       eventService,
+		roleService:        roleService,
+		adminService:       adminService,
 	}
 }
 
@@ -104,6 +108,17 @@ func (ac *AuthController) GoogleLoginHandler() http.HandlerFunc {
 				fmt.Printf("Failed to create user: %v\n", err)
 				utils.WriteInternalServerError(w, "Failed to create user account", err)
 				return
+			}
+
+			// Assign default "user" role to new user
+			userRole, err := ac.roleService.GetRoleByName("user")
+			if err != nil {
+				fmt.Printf("Warning: Failed to get user role: %v\n", err)
+			} else {
+				err = ac.adminService.AssignRoleToUser(user.ID, userRole.ID, user.ID)
+				if err != nil {
+					fmt.Printf("Warning: Failed to assign user role: %v\n", err)
+				}
 			}
 
 			// Publish user created event

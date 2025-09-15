@@ -92,7 +92,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (response.ok) {
-        const userData: User = await response.json();
+        const responseData = await response.json();
+        const userData: User = responseData.data; // Extract user data from the response
         
         // Try to get user roles and organizations from admin endpoint
         try {
@@ -106,15 +107,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           ]);
 
           if (rolesRes.ok) {
-            const roles: Role[] = await rolesRes.json();
-            userData.roles = roles;
+            const rolesData = await rolesRes.json();
+            userData.roles = rolesData.data || rolesData; // Handle both wrapped and unwrapped responses
           } else {
             userData.roles = [];
           }
 
           if (orgsRes.ok) {
-            const organizations: Organization[] = await orgsRes.json();
-            userData.organizations = organizations;
+            const orgsData = await orgsRes.json();
+            userData.organizations = orgsData.data || orgsData; // Handle both wrapped and unwrapped responses
           } else {
             userData.organizations = [];
           }
@@ -131,11 +132,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Token is invalid, clear it
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
+        setIsLoggedIn(false);
+        setUser(null);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      setIsLoggedIn(false);
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -172,7 +177,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (response.ok) {
-        const authData = await response.json();
+        const responseData = await response.json();
+        const authData = responseData.data; // Extract auth data from the response
         
         // Store tokens
         localStorage.setItem('access_token', authData.access_token);
@@ -230,7 +236,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const responseData = await response.json();
+        const data = responseData.data; // Extract refresh data from the response
         localStorage.setItem('access_token', data.access_token);
         return true;
       }

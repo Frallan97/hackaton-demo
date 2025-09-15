@@ -34,6 +34,7 @@ func NewRouter(dbManager *database.DBManager, userService *services.UserService,
 	// Create rate limiter for login endpoint: 5 requests per minute
 	loginRateLimiter := middleware.NewRateLimiter(5, time.Minute)
 	adminService := services.NewAdminService(dbManager.DB)
+	roleService := services.NewRoleService(dbManager.DB)
 	rbacMiddleware := middleware.NewRBACMiddleware(jwtService, adminService)
 
 	// Initialize Stripe services
@@ -44,11 +45,11 @@ func NewRouter(dbManager *database.DBManager, userService *services.UserService,
 		loginRateLimiter:       loginRateLimiter,
 		healthController:       controllers.NewHealthController(dbManager),
 		messageController:      controllers.NewMessageController(dbManager),
-		authController:         controllers.NewAuthController(dbManager, userService, jwtService, googleOAuthService, eventService),
+		authController:         controllers.NewAuthController(dbManager, userService, jwtService, googleOAuthService, eventService, roleService, adminService),
 		roleController:         controllers.NewRoleController(dbManager),
 		organizationController: controllers.NewOrganizationController(dbManager),
 		adminController:        controllers.NewAdminController(dbManager),
-		setupController:        controllers.NewSetupController(dbManager),
+		setupController:        controllers.NewSetupController(dbManager, jwtService, config),
 		stripeController:       controllers.NewStripeController(stripeService, subscriptionService, config),
 		rbacMiddleware:         rbacMiddleware,
 		eventService:           eventService,
@@ -78,6 +79,7 @@ func (r *Router) SetupRoutes() http.Handler {
 
 	// Setup endpoints - for initial admin setup
 	mux.HandleFunc("/api/setup/first-admin", r.setupController.MakeFirstUserAdminHandler())
+	mux.HandleFunc("/api/setup/dev-token", r.setupController.GenerateDevTokenHandler())
 
 	// RBAC endpoints - require authentication
 	mux.Handle("/api/roles", r.rbacMiddleware.RequireAnyRole([]string{"admin", "manager"})(http.HandlerFunc(r.roleController.RolesHandler())))

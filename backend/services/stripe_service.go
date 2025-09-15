@@ -164,6 +164,8 @@ func (s *StripeService) CreateCheckoutSession(userID int, planID, successURL, ca
 		Customer: stripe.String(customer.StripeID),
 		PaymentMethodTypes: []*string{
 			stripe.String("card"),
+			// Note: Swish requires special setup in Stripe dashboard and is region-specific
+			// stripe.String("swish"), // Uncomment when Swish is enabled in your Stripe account
 		},
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			{
@@ -171,7 +173,7 @@ func (s *StripeService) CreateCheckoutSession(userID int, planID, successURL, ca
 				Quantity: stripe.Int64(1),
 			},
 		},
-		Mode:       stripe.String(string(stripe.CheckoutSessionModeSubscription)),
+		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
 		SuccessURL: stripe.String(successURL),
 		CancelURL:  stripe.String(cancelURL),
 	}
@@ -436,37 +438,18 @@ func (s *StripeService) GetUserPayments(userID int) ([]*models.Payment, error) {
 	return payments, nil
 }
 
-// GetAvailablePlans returns available subscription plans
-func (s *StripeService) GetAvailablePlans() []*models.SubscriptionPlan {
+// GetAvailablePlans returns available payment plans
+func (s *StripeService) GetAvailablePlans() []*models.PaymentPlan {
 	// This could be fetched from Stripe API or stored in database
-	// For now, returning hardcoded plans
-	return []*models.SubscriptionPlan{
+	// For now, returning a single test plan
+	return []*models.PaymentPlan{
 		{
-			ID:          "price_basic_monthly",
-			Name:        "Basic Plan",
-			Description: "Basic features for individual users",
+			ID:          "price_1S7hcfAeXvIjnXEPpXj1morV",
+			Name:        "Test Payment",
+			Description: "Test payment with card and Swish support",
 			Price:       999, // $9.99 in cents
 			Currency:    "usd",
-			Interval:    "month",
-			Features:    []string{"Basic access", "Email support"},
-		},
-		{
-			ID:          "price_pro_monthly",
-			Name:        "Pro Plan",
-			Description: "Advanced features for power users",
-			Price:       1999, // $19.99 in cents
-			Currency:    "usd",
-			Interval:    "month",
-			Features:    []string{"All basic features", "Priority support", "Advanced analytics"},
-		},
-		{
-			ID:          "price_enterprise_monthly",
-			Name:        "Enterprise Plan",
-			Description: "Full features for teams and organizations",
-			Price:       4999, // $49.99 in cents
-			Currency:    "usd",
-			Interval:    "month",
-			Features:    []string{"All pro features", "Team management", "API access", "Dedicated support"},
+			Features:    []string{"Test payment functionality", "Card payments", "Swish payments", "Payment history"},
 		},
 	}
 }

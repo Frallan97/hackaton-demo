@@ -1,0 +1,47 @@
+# Cursor AI Rules for Hackathon Demo Project
+
+## Authentication
+When making HTTP requests to the backend API, always include this authentication header:
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6ImZyYW5zc2pvc0BnbWFpbC5jb20iLCJpc3MiOiJoYWNrYXRvbi1kZW1vIiwic3ViIjoiZnJhbnNzam9zQGdtYWlsLmNvbSIsImV4cCI6MTc1Nzk2NTkxMiwibmJmIjoxNzU3OTY1MDEyLCJpYXQiOjE3NTc5NjUwMTJ9.owyUh0iTXAm3pE2ppK1unu-xdtDvupJNqVsNX2qawX4
+
+## API Endpoints
+Backend API: http://localhost:8080
+Frontend: http://localhost:3000
+
+## Project Structure
+- Backend: Go with Gin framework, PostgreSQL, NATS, Stripe integration
+- Frontend: React with Vite, TypeScript, Redux Toolkit, Tailwind CSS
+- Database: PostgreSQL with migrations
+- Authentication: Google OAuth + JWT
+- Payment: Stripe integration
+- Events: NATS messaging system
+
+## Common API Endpoints
+- Health: GET http://localhost:8080/health
+- Auth me: GET http://localhost:8080/api/auth/me  
+- Stripe plans: GET http://localhost:8080/api/stripe/plans
+- Messages: GET http://localhost:8080/api/messages
+- Users (admin): GET http://localhost:8080/api/admin/users
+- Roles: GET http://localhost:8080/api/roles
+- Organizations: GET http://localhost:8080/api/organizations
+
+## Stripe Endpoints (Authenticated)
+- Create checkout: POST http://localhost:8080/api/stripe/checkout
+- Get subscription: GET http://localhost:8080/api/stripe/subscription
+- Cancel subscription: POST http://localhost:8080/api/stripe/subscription/cancel
+- Payment history: GET http://localhost:8080/api/stripe/payments
+
+## Development Notes
+- User ID: 1
+- User Email: franssjos@gmail.com
+- User has "user" role by default
+- Token expires in 30 days
+- Backend runs on port 8080, frontend on port 3000
+- Environment: ENVIRONMENT=development (required for dev token endpoint)
+- Dev token endpoint: POST http://localhost:8080/api/setup/dev-token
+
+## Code Style
+- Go: Use standard Go formatting, error handling patterns
+- React: Functional components with hooks, TypeScript strict mode
+- Database: Use PostgreSQL-specific features, proper migrations
+- API: RESTful design with proper HTTP status codes 

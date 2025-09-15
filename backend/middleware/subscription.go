@@ -24,7 +24,7 @@ func (m *SubscriptionMiddleware) RequireSubscription() func(http.Handler) http.H
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Get user ID from context (set by auth middleware)
-			userID, ok := r.Context().Value("user_id").(int)
+			userID, ok := r.Context().Value("userID").(int)
 			if !ok {
 				http.Error(w, "User not authenticated", http.StatusUnauthorized)
 				return
@@ -52,7 +52,7 @@ func (m *SubscriptionMiddleware) RequirePlan(requiredPlan string) func(http.Hand
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Get user ID from context (set by auth middleware)
-			userID, ok := r.Context().Value("user_id").(int)
+			userID, ok := r.Context().Value("userID").(int)
 			if !ok {
 				http.Error(w, "User not authenticated", http.StatusUnauthorized)
 				return
@@ -80,7 +80,7 @@ func (m *SubscriptionMiddleware) AddSubscriptionContext() func(http.Handler) htt
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Get user ID from context (set by auth middleware)
-			userID, ok := r.Context().Value("user_id").(int)
+			userID, ok := r.Context().Value("userID").(int)
 			if !ok {
 				next.ServeHTTP(w, r)
 				return

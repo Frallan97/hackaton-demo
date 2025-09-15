@@ -20,5 +20,6 @@ INSERT INTO roles (name, description) VALUES
     ('admin', 'Global administrator with full system access'),
     ('manager', 'Manager with organization-level access'),
     ('editor', 'Editor with content modification access'),
-    ('reader', 'Read-only access to content')
+    ('reader', 'Read-only access to content'),
+    ('user', 'Standard user with basic access')
 ON CONFLICT (name) DO NOTHING;

@@ -40,7 +40,7 @@ func (c *StripeController) CreateCheckoutSessionHandler() http.HandlerFunc {
 		}
 
 		// Get user ID from context (set by auth middleware)
-		userID, ok := r.Context().Value("user_id").(int)
+		userID, ok := r.Context().Value("userID").(int)
 		if !ok {
 			utils.WriteUnauthorized(w, "User not authenticated")
 			return
@@ -123,7 +123,7 @@ func (c *StripeController) GetUserSubscriptionHandler() http.HandlerFunc {
 		}
 
 		// Get user ID from context
-		userID, ok := r.Context().Value("user_id").(int)
+		userID, ok := r.Context().Value("userID").(int)
 		if !ok {
 			utils.WriteUnauthorized(w, "User not authenticated")
 			return
@@ -156,7 +156,7 @@ func (c *StripeController) GetUserSubscriptionHistoryHandler() http.HandlerFunc 
 		}
 
 		// Get user ID from context
-		userID, ok := r.Context().Value("user_id").(int)
+		userID, ok := r.Context().Value("userID").(int)
 		if !ok {
 			utils.WriteUnauthorized(w, "User not authenticated")
 			return
@@ -181,7 +181,7 @@ func (c *StripeController) GetUserPaymentHistoryHandler() http.HandlerFunc {
 		}
 
 		// Get user ID from context
-		userID, ok := r.Context().Value("user_id").(int)
+		userID, ok := r.Context().Value("userID").(int)
 		if !ok {
 			utils.WriteUnauthorized(w, "User not authenticated")
 			return
@@ -206,7 +206,7 @@ func (c *StripeController) CancelSubscriptionHandler() http.HandlerFunc {
 		}
 
 		// Get user ID from context
-		userID, ok := r.Context().Value("user_id").(int)
+		userID, ok := r.Context().Value("userID").(int)
 		if !ok {
 			utils.WriteUnauthorized(w, "User not authenticated")
 			return
@@ -230,7 +230,7 @@ func (c *StripeController) ReactivateSubscriptionHandler() http.HandlerFunc {
 		}
 
 		// Get user ID from context
-		userID, ok := r.Context().Value("user_id").(int)
+		userID, ok := r.Context().Value("userID").(int)
 		if !ok {
 			utils.WriteUnauthorized(w, "User not authenticated")
 			return

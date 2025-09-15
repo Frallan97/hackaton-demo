@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Loader2, Shield, Building2, User, Calendar, Mail, Key, RefreshCw, LogOut } from 'lucide-react';
 import { ThemeToggle } from './components/ThemeToggle';
 import { ReduxDemo } from './components/ReduxDemo';
-import { StripeDemo } from './components/StripeDemo';
+import { PaymentDemo } from './components/PaymentDemo';
 
 const HomePage: React.FC = () => {
   const { user, handleLogout, refreshToken, hasRole, authenticatedFetch, setError } = useAuth();
@@ -148,7 +148,7 @@ const HomePage: React.FC = () => {
 
         {/* Stripe Integration Demo */}
         <div className="mb-8">
-          <StripeDemo />
+                          <PaymentDemo />
         </div>
 
         {/* Navigation and action buttons */}

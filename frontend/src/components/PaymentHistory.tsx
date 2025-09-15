@@ -28,7 +28,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
       // For now, we'll use the current user's payments
       // In a real app, admins could fetch payments for specific users
       const paymentHistory = await stripeService.getPaymentHistory();
-      setPayments(paymentHistory);
+      setPayments(paymentHistory); // Service now always returns an array
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch payment history');
     } finally {
@@ -144,7 +144,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
           ))}
         </div>
         
-        {isAdmin && (
+        {isAdmin && payments.length > 0 && (
           <div className="mt-6 pt-4 border-t border-gray-200">
             <div className="text-sm text-gray-600">
               <p>Total Payments: {payments.length}</p>
