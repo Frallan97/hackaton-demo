@@ -25,11 +25,11 @@ func NewDBManager(cfg *config.Config) *DBManager {
 		return nil
 	}
 
-	// Configure connection pool settings
-	db.SetMaxOpenConns(25)                 // Maximum number of open connections
-	db.SetMaxIdleConns(5)                  // Maximum number of idle connections
-	db.SetConnMaxLifetime(5 * time.Minute) // Maximum lifetime of a connection
-	db.SetConnMaxIdleTime(1 * time.Minute) // Maximum idle time of a connection
+	// Configure optimized connection pool settings
+	db.SetMaxOpenConns(10)                  // Reduced for better performance
+	db.SetMaxIdleConns(5)                   // Keep idle connections ready
+	db.SetConnMaxLifetime(10 * time.Minute) // Longer lifetime reduces reconnections
+	db.SetConnMaxIdleTime(2 * time.Minute)  // Reasonable idle time
 
 	manager := &DBManager{
 		DB:     db,
@@ -63,7 +63,7 @@ func (dm *DBManager) monitorConnection() {
 				}
 			}
 		}
-		time.Sleep(10 * time.Second) // Increased interval to reduce logging
+		time.Sleep(30 * time.Second) // Optimized interval for production
 	}
 }
 

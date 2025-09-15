@@ -1,8 +1,8 @@
-# Cursor AI Rules for Hackathon Demo Project
+# Cursor AI Rules for Go-React-Stripe Template
 
 ## Authentication
-When making HTTP requests to the backend API, always include this authentication header:
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6ImZyYW5zc2pvc0BnbWFpbC5jb20iLCJpc3MiOiJoYWNrYXRvbi1kZW1vIiwic3ViIjoiZnJhbnNzam9zQGdtYWlsLmNvbSIsImV4cCI6MTc1Nzk2NTkxMiwibmJmIjoxNzU3OTY1MDEyLCJpYXQiOjE3NTc5NjUwMTJ9.owyUh0iTXAm3pE2ppK1unu-xdtDvupJNqVsNX2qawX4
+When making HTTP requests to the backend API, include authentication header:
+Authorization: Bearer <your-jwt-token>
 
 ## API Endpoints
 Backend API: http://localhost:8080
@@ -13,7 +13,7 @@ Frontend: http://localhost:3000
 - Frontend: React with Vite, TypeScript, Redux Toolkit, Tailwind CSS
 - Database: PostgreSQL with migrations
 - Authentication: Google OAuth + JWT
-- Payment: Stripe integration
+- Payment: Modular Stripe integration
 - Events: NATS messaging system
 
 ## Common API Endpoints

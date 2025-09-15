@@ -1,4 +1,4 @@
-// @title        Hackaton Demo API
+// @title        Go-React-Stripe Template API
 // @version      0.1.0
 // @description  Auto‑generated Swagger docs
 // @host         localhost:8080
@@ -6,9 +6,11 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/frallan97/hackaton-demo-backend/config"
@@ -20,88 +22,107 @@ import (
 )
 
 func main() {
-	// Print all environment variables for debugging
-	log.Println("Environment variables at startup:")
-	for _, e := range os.Environ() {
-		log.Println(e)
-	}
+	log.Println("🚀 Starting Go-React-Stripe Template API...")
+	startTime := time.Now()
 
 	// Load configuration
 	cfg := config.LoadConfig()
-	log.Printf("Attempting to connect to Postgres with DSN: %s", cfg.GetDSN())
+	log.Printf("📡 Environment: %s", cfg.Environment)
 
-	// Initialize database manager
+	// Initialize database manager with optimized connection
+	log.Println("🗄️  Connecting to database...")
 	dbManager := database.NewDBManager(cfg)
 	if dbManager == nil {
-		log.Fatal("Failed to create database manager")
+		log.Fatal("❌ Failed to create database manager")
 	}
 	defer dbManager.Close()
 
-	// Wait for database connection to be established
-	log.Println("Waiting for database connection...")
-	for i := 0; i < 30; i++ { // Wait up to 30 seconds
-		if dbManager.IsConnected() {
-			log.Println("Database connection established successfully")
-			break
+	// Fast database connection check with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	connected := make(chan bool, 1)
+	go func() {
+		for {
+			if dbManager.IsConnected() {
+				connected <- true
+				return
+			}
+			select {
+			case <-ctx.Done():
+				connected <- false
+				return
+			default:
+				time.Sleep(100 * time.Millisecond) // Much faster polling
+			}
 		}
-		if i == 29 {
-			log.Fatal("Failed to establish database connection after 30 seconds")
+	}()
+
+	select {
+	case success := <-connected:
+		if !success {
+			log.Fatal("❌ Database connection timeout (10s)")
 		}
-		log.Println("Waiting for database connection...")
-		time.Sleep(1 * time.Second)
+		log.Println("✅ Database connected")
+	case <-ctx.Done():
+		log.Fatal("❌ Database connection timeout (10s)")
 	}
 
-	// Test database connection stability
-	log.Println("Testing database connection stability...")
-	for i := 0; i < 3; i++ {
-		if err := dbManager.DB.Ping(); err != nil {
-			log.Fatalf("Database connection test failed: %v", err)
-		}
-		time.Sleep(1 * time.Second)
-	}
-	log.Println("Database connection is stable")
+	// Initialize services in parallel
+	log.Println("🔧 Initializing services...")
 
-	// Initialize migration service and run migrations
-	migrationService := services.NewMigrationService(dbManager.DB)
-	log.Println("Running database migrations...")
-	if err := migrationService.RunMigrations(); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
-	}
-
-	// Small delay to ensure database connection is stable after migrations
-	log.Println("Waiting for database connection to stabilize after migrations...")
-	time.Sleep(2 * time.Second)
-
-	// Final connection test after migrations
-	if err := dbManager.DB.Ping(); err != nil {
-		log.Fatalf("Database connection lost after migrations: %v", err)
-	}
-	log.Println("Database connection confirmed stable after migrations")
-
-	// Initialize NATS event bus and services
+	var wg sync.WaitGroup
+	var migrationService *services.MigrationService
 	var eventBus events.EventBus
-	var err error
+	var eventService *events.EventService
 
-	// Get NATS URL from environment, fallback to localhost for development
-	natsURL := os.Getenv("NATS_URL")
-	if natsURL == "" {
-		natsURL = "nats://localhost:4222"
-	}
+	// Start migration in goroutine
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		migrationService = services.NewMigrationService(dbManager.DB)
+		if err := migrationService.RunMigrations(); err != nil {
+			log.Fatalf("❌ Migration failed: %v", err)
+		}
+		log.Println("✅ Migrations completed")
+	}()
 
-	eventBus, err = events.NewNATSEventBus(natsURL)
-	if err != nil {
-		log.Printf("Warning: Failed to connect to NATS at %s, falling back to custom event bus: %v", natsURL, err)
-		eventBus = events.NewEventBus()
-	}
-	_ = events.NewEventHandlerManager(eventBus) // Initialize handlers
-	eventService := events.NewEventService(eventBus)
+	// Initialize event system in parallel
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		natsURL := os.Getenv("NATS_URL")
+		if natsURL == "" {
+			natsURL = "nats://localhost:4222"
+		}
 
-	// Publish system startup event
-	if err := eventService.PublishSystemStartup(); err != nil {
-		log.Printf("Warning: Failed to publish system startup event: %v", err)
-	}
+		// Try NATS with short timeout
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
 
-	// Initialize services
+		natsChan := make(chan events.EventBus, 1)
+		go func() {
+			if bus, err := events.NewNATSEventBus(natsURL); err == nil {
+				natsChan <- bus
+			}
+		}()
+
+		select {
+		case eventBus = <-natsChan:
+			log.Println("✅ NATS connected")
+		case <-ctx.Done():
+			log.Println("⚠️  NATS unavailable, using fallback event bus")
+			eventBus = events.NewEventBus()
+		}
+
+		_ = events.NewEventHandlerManager(eventBus) // Initialize handlers
+		eventService = events.NewEventService(eventBus)
+	}()
+
+	// Wait for parallel initialization to complete
+	wg.Wait()
+
+	// Create services (fast, no I/O operations)
 	userService := services.NewUserService(dbManager.DB)
 	jwtService := services.NewJWTService(cfg.JWTSecretKey)
 	googleOAuthService := services.NewGoogleOAuthService(
@@ -110,12 +131,23 @@ func main() {
 		cfg.GoogleRedirectURL,
 	)
 
-	// Initialize router with all controllers and services
+	// Initialize router (fast, no I/O operations)
+	log.Println("🌐 Setting up routes...")
 	router := handlers.NewRouter(dbManager, userService, jwtService, googleOAuthService, eventService, cfg)
 	handler := router.SetupRoutes()
 
-	log.Printf("listening on :%s", cfg.ServerPort)
+	// Publish system startup event (non-blocking)
+	go func() {
+		if err := eventService.PublishSystemStartup(); err != nil {
+			log.Printf("⚠️  Failed to publish startup event: %v", err)
+		}
+	}()
+
+	elapsed := time.Since(startTime)
+	log.Printf("🚀 Server listening on port %s", cfg.ServerPort)
+	log.Printf("✨ Go-React-Stripe Template API ready! (startup: %v)", elapsed)
+
 	if err := http.ListenAndServe(":"+cfg.ServerPort, handler); err != nil {
-		log.Fatalf("server error: %v", err)
+		log.Fatalf("❌ Server error: %v", err)
 	}
 }
