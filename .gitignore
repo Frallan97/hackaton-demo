@@ -44,3 +44,5 @@ charts/*/Chart.lock
 .env
 .env.local
 .env.*.local 
+
+*values.yaml

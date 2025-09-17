@@ -17,10 +17,10 @@ ingress:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
   tls:
     - hosts:
-        - hackaton-demo.web.franssjostrom.com
+        - your-domain.com
       secretName: web-wildcard-tls
   hosts:
-    - host: hackaton-demo.web.franssjostrom.com
+    - host: your-domain.com
       paths:
         - path: /
           pathType: Prefix
@@ -32,8 +32,8 @@ imagePullSecrets:
 # -------------------------------------------------------------------
 # OAuth Configuration
 oauth:
-  googleClientId: "446906390811-o6mpdm0v9ekf6lfa1kja0vkdqbghb81g.apps.googleusercontent.com"
-  googleClientSecret: "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"
+  googleClientId: "your-google-client-id.apps.googleusercontent.com"
+  googleClientSecret: "your-google-client-secret"
   jwtSecretKey: "your-secret-key-change-in-production"
   # Redirect URL will be automatically set to production domain in Kubernetes
   # For local development, it uses the .env file value
