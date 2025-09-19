@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"log"
+	"os"
 	"sync/atomic"
 	"time"
 
@@ -25,18 +26,18 @@ func NewDBManager(cfg *config.Config) *DBManager {
 		return nil
 	}
 
-	// Configure connection pool settings
-	db.SetMaxOpenConns(25)                 // Maximum number of open connections
-	db.SetMaxIdleConns(5)                  // Maximum number of idle connections
-	db.SetConnMaxLifetime(5 * time.Minute) // Maximum lifetime of a connection
-	db.SetConnMaxIdleTime(1 * time.Minute) // Maximum idle time of a connection
+	// Optimized connection pool settings for faster startup
+	db.SetMaxOpenConns(10)                  // Reduced from 25 for faster startup
+	db.SetMaxIdleConns(3)                   // Reduced from 5 for faster startup
+	db.SetConnMaxLifetime(10 * time.Minute) // Increased from 5 minutes
+	db.SetConnMaxIdleTime(2 * time.Minute)  // Increased from 1 minute
 
 	manager := &DBManager{
 		DB:     db,
 		Config: cfg,
 	}
 
-	// Start connection monitoring
+	// Start connection monitoring with reduced frequency in production
 	go manager.monitorConnection()
 
 	return manager
@@ -44,26 +45,33 @@ func NewDBManager(cfg *config.Config) *DBManager {
 
 // monitorConnection continuously monitors the database connection
 func (dm *DBManager) monitorConnection() {
+	// Use different monitoring intervals based on environment
+	interval := 5 * time.Second // Default for development
+	if os.Getenv("ENVIRONMENT") == "production" {
+		interval = 30 * time.Second // Less frequent in production
+	}
+
 	for {
 		if dm.DB != nil {
 			err := dm.DB.Ping()
 			if err == nil {
 				if !dm.Connected.Load() {
-					log.Println("connected to Postgres successfully")
+					log.Println("✅ Connected to database successfully")
 					dm.Connected.Store(true)
 				}
 			} else {
 				if dm.Connected.Load() {
-					log.Printf("lost connection to DB: %v", err)
+					log.Printf("❌ Lost connection to database: %v", err)
 					dm.Connected.Store(false)
 				} else {
-					// Only log connection failures if we're not already connected
-					// This reduces noise during startup
-					log.Printf("unable to ping DB: %v", err)
+					// Only log in debug mode to reduce noise
+					if os.Getenv("DEBUG") == "true" {
+						log.Printf("⚠️  Unable to ping database: %v", err)
+					}
 				}
 			}
 		}
-		time.Sleep(10 * time.Second) // Increased interval to reduce logging
+		time.Sleep(interval)
 	}
 }
 

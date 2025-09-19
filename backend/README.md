@@ -1,6 +1,6 @@
 # Backend API
 
-A Go-based REST API with a clean, modular architecture.
+A Go-based REST API with a clean, modular architecture and optimized startup performance.
 
 ## Architecture
 
@@ -21,17 +21,30 @@ backend/
 │   └── config.go
 ├── database/           # Database connection
 │   └── connection.go
+├── migrations/         # Database migrations
+├── .air.toml          # Air configuration for hot reloading
 └── main.go            # Application entry point
 ```
 
 ## Features
 
 - **Modular Architecture**: Clean separation of concerns
+- **Optimized Startup**: Fast database connection with exponential backoff
+- **Hot Reloading**: Air integration for development
 - **Middleware Support**: Logging and CORS middleware included
-- **Configuration Management**: Environment-based configuration
-- **Database Monitoring**: Automatic connection health monitoring
+- **Configuration Management**: Environment-based configuration with singleton pattern
+- **Database Monitoring**: Automatic connection health monitoring with adaptive intervals
 - **Swagger Documentation**: Auto-generated API docs at `/docs`
 - **Health Checks**: Database connectivity monitoring
+
+## Performance Optimizations
+
+- **Faster Startup**: Reduced database connection timeout from 30s to 15s
+- **Exponential Backoff**: Smart connection retry strategy
+- **Reduced Logging**: Debug-mode conditional logging to reduce noise
+- **Optimized Connection Pool**: Tuned for faster startup and better resource usage
+- **Singleton Configuration**: Configuration loaded once and cached
+- **Adaptive Monitoring**: Different monitoring intervals for dev vs production
 
 ## API Endpoints
 
@@ -57,21 +70,47 @@ backend/
 ### Prerequisites
 - Go 1.23+
 - PostgreSQL (for full functionality)
+- Air (for hot reloading)
 
-### Running Locally
+### Quick Start
 ```bash
 # Install dependencies
 go mod tidy
 
-# Run the server
-go run main.go
+# Install Air for hot reloading
+go install github.com/air-verse/air@latest
 
-# Or build and run
-go build -o server .
-./server
+# Development with hot reloading (recommended)
+DEBUG=true ENVIRONMENT=development air
+
+# Or run normally without hot reloading
+go run main.go
 ```
 
+### Air Hot Reloading
+
+Air is configured to provide the best development experience:
+
+```bash
+# Start with debug logging and hot reloading
+DEBUG=true ENVIRONMENT=development air
+
+# Start in production mode (less verbose logging)
+ENVIRONMENT=production air
+
+# Just run with Air (uses defaults)
+air
+```
+
+The `.air.toml` configuration provides:
+- **Fast rebuilds**: 1-second delay for file changes
+- **Smart exclusions**: Ignores test files, migrations, and build artifacts
+- **Clean interface**: Colored output and clear screen on rebuild
+- **Error logging**: Build errors saved to `build-errors.log`
+
 ### Environment Variables
+
+#### Core Configuration
 - `DB_HOST` - Database host (default: localhost)
 - `DB_PORT` - Database port (default: 5432)
 - `DB_USER` - Database user (default: postgres)
@@ -80,7 +119,11 @@ go build -o server .
 - `DB_URL` - Full database URL (overrides individual vars)
 - `SERVER_PORT` - Server port (default: 8080)
 
-### Authentication (Google OAuth)
+#### Development & Debugging
+- `DEBUG` - Enable debug logging (set to "true" for verbose logs)
+- `ENVIRONMENT` - Set to "production" for optimized monitoring intervals
+
+#### Authentication (Google OAuth)
 - `JWT_SECRET_KEY` - Secret key for JWT token signing (default: your-secret-key-change-in-production)
 - `GOOGLE_CLIENT_ID` - Google OAuth client ID (required for authentication)
 - `GOOGLE_CLIENT_SECRET` - Google OAuth client secret (required for authentication)

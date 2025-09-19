@@ -65,12 +65,14 @@ cd backend
 # Install dependencies
 go mod tidy
 
-# Run the server (will use environment variables from .env)
-go run main.go
+# Install Air for hot reloading
+go install github.com/air-verse/air@latest
 
-# Or build and run
-go build -o server .
-./server
+# Run with hot reloading (recommended for development)
+DEBUG=true ENVIRONMENT=development air
+
+# Or run normally without hot reloading
+go run main.go
 ```
 
 The backend will be available at: http://localhost:8080
@@ -82,8 +84,8 @@ cd frontend
 # Install dependencies
 bun install
 
-# Start development server
-bun run dev
+# Start development server with hot reloading
+bun dev
 ```
 
 The frontend will be available at: http://localhost:3000
@@ -142,6 +144,7 @@ docker-compose down
 - **Port conflicts**: Check if ports 3000, 8080, 5432, or 6379 are already in use
 - **Database connection issues**: Verify PostgreSQL is running with `docker-compose ps`
 - **Frontend build issues**: Try `bun install` in the frontend directory
+- **Backend hot reloading issues**: Ensure Air is installed with `go install github.com/air-verse/air@latest`
 - **OAuth errors**: Check that `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set in `.env`
 - **JWT errors**: Verify `JWT_SECRET_KEY` is set in `.env`
 - **Kubernetes nginx proxy errors**: The frontend uses environment variable `BACKEND_URL` to connect to backend service

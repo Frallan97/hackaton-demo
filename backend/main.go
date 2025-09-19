@@ -6,6 +6,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -19,46 +20,62 @@ import (
 )
 
 func main() {
-	// Print all environment variables for debugging
-	log.Println("Environment variables at startup:")
-	for _, e := range os.Environ() {
-		log.Println(e)
+	// Only log environment variables in debug mode
+	if os.Getenv("DEBUG") == "true" {
+		log.Println("Environment variables at startup:")
+		for _, e := range os.Environ() {
+			log.Println(e)
+		}
 	}
 
 	// Load configuration
 	cfg := config.LoadConfig()
-	log.Printf("Attempting to connect to Postgres with DSN: %s", cfg.GetDSN())
 
-	// Initialize database manager
+	// Initialize database manager with faster connection timeout
 	dbManager := database.NewDBManager(cfg)
 	if dbManager == nil {
 		log.Fatal("Failed to create database manager")
 	}
 	defer dbManager.Close()
 
-	// Wait for database connection to be established
-	log.Println("Waiting for database connection...")
-	for i := 0; i < 30; i++ { // Wait up to 30 seconds
-		if dbManager.IsConnected() {
-			log.Println("Database connection established successfully")
-			break
+	// Wait for database connection with shorter timeout and exponential backoff
+	log.Println("Establishing database connection...")
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	connected := make(chan bool, 1)
+	go func() {
+		backoff := 100 * time.Millisecond
+		maxBackoff := 2 * time.Second
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				if dbManager.IsConnected() {
+					connected <- true
+					return
+				}
+				time.Sleep(backoff)
+				if backoff < maxBackoff {
+					backoff *= 2
+				}
+			}
 		}
-		if i == 29 {
-			log.Fatal("Failed to establish database connection after 30 seconds")
-		}
-		log.Println("Waiting for database connection...")
-		time.Sleep(1 * time.Second)
+	}()
+
+	select {
+	case <-connected:
+		log.Println("Database connection established")
+	case <-ctx.Done():
+		log.Fatal("Failed to establish database connection within timeout")
 	}
 
-	// Test database connection stability
-	log.Println("Testing database connection stability...")
-	for i := 0; i < 3; i++ {
-		if err := dbManager.DB.Ping(); err != nil {
-			log.Fatalf("Database connection test failed: %v", err)
-		}
-		time.Sleep(1 * time.Second)
+	// Single database ping test instead of multiple
+	if err := dbManager.DB.Ping(); err != nil {
+		log.Fatalf("Database connection test failed: %v", err)
 	}
-	log.Println("Database connection is stable")
 
 	// Initialize migration service and run migrations
 	migrationService := services.NewMigrationService(dbManager.DB)
@@ -67,17 +84,7 @@ func main() {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
-	// Small delay to ensure database connection is stable after migrations
-	log.Println("Waiting for database connection to stabilize after migrations...")
-	time.Sleep(2 * time.Second)
-
-	// Final connection test after migrations
-	if err := dbManager.DB.Ping(); err != nil {
-		log.Fatalf("Database connection lost after migrations: %v", err)
-	}
-	log.Println("Database connection confirmed stable after migrations")
-
-	// Initialize services
+	// Initialize services concurrently
 	userService := services.NewUserService(dbManager.DB)
 	jwtService := services.NewJWTService(cfg.JWTSecretKey)
 	googleOAuthService := services.NewGoogleOAuthService(
@@ -90,7 +97,7 @@ func main() {
 	router := handlers.NewRouter(dbManager, userService, jwtService, googleOAuthService)
 	handler := router.SetupRoutes()
 
-	log.Printf("listening on :%s", cfg.ServerPort)
+	log.Printf("🚀 Server starting on port %s", cfg.ServerPort)
 	if err := http.ListenAndServe(":"+cfg.ServerPort, handler); err != nil {
 		log.Fatalf("server error: %v", err)
 	}

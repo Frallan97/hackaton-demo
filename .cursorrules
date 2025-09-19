@@ -1,0 +1,179 @@
+# Hackaton Web4 Project Rules
+
+## Project Overview
+This is a full-stack web application with a Go backend and React frontend, designed for hackathons and rapid prototyping.
+
+### Architecture
+- **Backend**: Go REST API with PostgreSQL database
+- **Frontend**: React with TypeScript, Vite, and Tailwind CSS
+- **Development**: Docker Compose for local development
+- **Hot Reloading**: Air for backend, Vite for frontend
+
+## Project Structure
+
+```
+hackaton-web4/
+├── backend/                 # Go REST API
+│   ├── controllers/         # HTTP request handlers
+│   ├── models/             # Data structures
+│   ├── services/           # Business logic
+│   ├── middleware/         # HTTP middleware
+│   ├── database/           # Database connection and migrations
+│   ├── config/             # Configuration management
+│   ├── .air.toml           # Hot reloading configuration
+│   └── Makefile            # Development commands
+├── frontend/               # React TypeScript app
+│   ├── src/
+│   │   ├── components/     # Reusable UI components
+│   │   ├── admin/          # Admin dashboard components
+│   │   └── lib/           # Utility functions
+│   └── public/            # Static assets
+└── docker-compose.yml     # Local development setup
+```
+
+## Development Guidelines
+
+### Code Style
+- **Go**: Follow standard Go conventions, use gofmt
+- **TypeScript/React**: Use functional components with hooks
+- **CSS**: Use Tailwind CSS classes, avoid custom CSS when possible
+- **Naming**: Use descriptive names, camelCase for TS/JS, snake_case for Go
+
+### Performance Considerations
+- Backend startup is optimized with exponential backoff and reduced timeouts
+- Use singleton pattern for configuration loading
+- Implement proper connection pooling for database
+- Use debug mode conditionally to reduce logging noise
+
+### Development Commands
+
+#### Backend
+```bash
+# Install Air for hot reloading
+go install github.com/air-verse/air@latest
+
+# Development with hot reloading
+DEBUG=true ENVIRONMENT=development air
+
+# Or run normally
+go run main.go
+```
+
+#### Frontend
+```bash
+bun install       # Install dependencies
+bun dev           # Start development server
+bun run build     # Build for production
+bun run preview   # Preview production build
+```
+
+### Environment Variables
+- Use `.env` files for local development
+- Never commit secrets to version control
+- Document all environment variables in README files
+- Use sensible defaults for development
+
+### Database
+- Use migrations for schema changes
+- Keep migrations in `backend/migrations/`
+- Test migrations both up and down
+- Use descriptive migration names with timestamps
+
+### API Design
+- Follow RESTful conventions
+- Use consistent error responses
+- Include proper HTTP status codes
+- Document endpoints with Swagger
+
+### Authentication
+- Uses Google OAuth for authentication
+- JWT tokens for session management
+- RBAC (Role-Based Access Control) system
+- Protected routes with middleware
+
+## File Naming Conventions
+
+### Backend (Go)
+- Controllers: `*_controller.go`
+- Models: `*.go` (singular, e.g., `user.go`)
+- Services: `*_service.go`
+- Middleware: `*.go` (descriptive, e.g., `logging.go`)
+
+### Frontend (TypeScript/React)
+- Components: `PascalCase.tsx`
+- Hooks: `use*.ts`
+- Utilities: `camelCase.ts`
+- Pages: `PascalCase.tsx`
+
+## Best Practices
+
+### Error Handling
+- Always handle errors gracefully
+- Log errors with appropriate context
+- Return meaningful error messages to clients
+- Use proper HTTP status codes
+
+### Security
+- Validate all inputs
+- Use parameterized queries for database
+- Implement proper CORS policies
+- Secure JWT token handling
+
+### Testing
+- Write unit tests for business logic
+- Test API endpoints
+- Test React components
+- Use meaningful test descriptions
+
+### Performance
+- Optimize database queries
+- Use appropriate indexes
+- Implement caching where beneficial
+- Minimize bundle sizes for frontend
+
+## Docker Development
+- Use `docker-compose up` for full stack development
+- Services are configured for hot reloading
+- Database data is persisted in volumes
+- Environment variables are managed through docker-compose
+
+## Deployment Considerations
+- Application is containerized
+- Uses multi-stage builds for production
+- Environment-specific configurations
+- Health checks for all services
+
+## Common Tasks
+
+### Adding New API Endpoint
+1. Create model in `backend/models/`
+2. Create controller in `backend/controllers/`
+3. Add routes in `backend/handlers/router.go`
+4. Update Swagger documentation
+5. Test the endpoint
+
+### Adding New React Component
+1. Create component in appropriate directory
+2. Use TypeScript for type safety
+3. Follow existing component patterns
+4. Use Tailwind for styling
+5. Export from index files if needed
+
+### Database Changes
+1. Create migration files in `backend/migrations/`
+2. Test migration up and down
+3. Update models if needed
+4. Update API endpoints if schema changes
+
+## Debugging
+- Use `DEBUG=true` environment variable for verbose logging
+- Backend logs are structured and include timestamps
+- Use browser dev tools for frontend debugging
+- Air provides build error logging in `build-errors.log`
+
+## Dependencies Management
+- Keep dependencies up to date
+- Use `go mod tidy` for Go dependencies
+- Use `bun audit` for security vulnerabilities
+- Use `bun install` for frontend dependencies
+- Document any special dependency requirements 

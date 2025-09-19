@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/joho/godotenv"
 )
@@ -27,8 +28,20 @@ type Config struct {
 	GoogleRedirectURL  string
 }
 
-// LoadConfig loads configuration from environment variables
+var (
+	configInstance *Config
+	configOnce     sync.Once
+)
+
+// LoadConfig loads configuration from environment variables (singleton pattern for performance)
 func LoadConfig() *Config {
+	configOnce.Do(func() {
+		configInstance = loadConfigInternal()
+	})
+	return configInstance
+}
+
+func loadConfigInternal() *Config {
 	// Check if we're in production (have environment variables set)
 	hasEnvVars := os.Getenv("GOOGLE_CLIENT_ID") != "" && os.Getenv("GOOGLE_CLIENT_SECRET") != ""
 
@@ -37,11 +50,13 @@ func LoadConfig() *Config {
 		if err := godotenv.Load("../.env"); err != nil {
 			// Try current directory as fallback
 			if err := godotenv.Load(); err != nil {
-				// Don't fail if .env doesn't exist, just log it
-				log.Println("No .env file found, using system environment variables")
+				// Only log in debug mode to reduce noise
+				if os.Getenv("DEBUG") == "true" {
+					log.Println("No .env file found, using system environment variables")
+				}
 			}
 		}
-	} else {
+	} else if os.Getenv("DEBUG") == "true" {
 		log.Println("Using environment variables (production mode)")
 	}
 
@@ -63,9 +78,11 @@ func LoadConfig() *Config {
 		GoogleRedirectURL:  getEnv("GOOGLE_REDIRECT_URL", "http://localhost:3000/auth/callback"),
 	}
 
-	// Debug logging for OAuth configuration
-	log.Printf("OAuth Configuration - Client ID: %s, Redirect URL: %s",
-		config.GoogleClientID, config.GoogleRedirectURL)
+	// Only log OAuth configuration in debug mode
+	if os.Getenv("DEBUG") == "true" {
+		log.Printf("OAuth Configuration - Client ID: %s, Redirect URL: %s",
+			config.GoogleClientID, config.GoogleRedirectURL)
+	}
 
 	return config
 }
